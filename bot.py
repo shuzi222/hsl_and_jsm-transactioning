@@ -67,6 +67,9 @@ def load_config():
 def init_binance(api_key, api_secret):
     global client
     try:
+        proxies = {
+            'https': 'https://sub-1.smjcdh.top/smjc/api/v1/client/subscribe?token=fcc6d43a359c6b90f9cffbc1cd82705d'
+        }
         client = Spot(api_key=api_key, api_secret=api_secret, base_url='https://api.binance.com')
         client.time()
         logging.info("Binance API initialized successfully")
