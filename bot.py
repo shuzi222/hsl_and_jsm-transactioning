@@ -8,6 +8,7 @@ from logging.handlers import RotatingFileHandler
 from datetime import datetime, timedelta
 from queue import Queue
 import traceback
+import requests
 
 # 设置日志（带轮转）
 log_handler = RotatingFileHandler(
