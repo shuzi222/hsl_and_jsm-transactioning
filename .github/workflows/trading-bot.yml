@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install python-binance numpy
+          pip install binance-connector numpy
 
       - name: Run trading bot
         env:
