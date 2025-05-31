@@ -2,7 +2,7 @@ name: OKX Trading Bot
 
 on:
   schedule:
-    - cron: '57 * * * *'  # 每小时运行
+    - cron: '1 * * * *'  # 每小时运行
   workflow_dispatch:  # 支持手动触发
 
 jobs:
