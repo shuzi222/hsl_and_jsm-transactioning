@@ -8,6 +8,7 @@ on:
 jobs:
   trade:
     runs-on: ubuntu-latest
+    timeout-minutes: 2  # 限制最大运行时间
     env:
       OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
       OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
@@ -23,19 +24,23 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install python-okx pandas numpy
+          pip install python-okx==0.3.9 pandas==2.2.3 numpy==2.2.6
       - name: Run trading bot
-        run: python github-OKX.py
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 1
+          max_attempts: 2
+          command: python github-OKX.py
       - name: Compress logs
-        if: always()  # 即使失败也压缩
+        if: always()
         run: zip trading-logs.zip trading.log || echo "No trading.log to compress"
       - name: Upload logs
-        if: always()  # 即使失败也上传
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: trading-logs
           path: trading-logs.zip
-          retention-days: 3  # 保留 3 天
+          retention-days: 3
       - name: Debug on failure
         if: failure()
         run: |
