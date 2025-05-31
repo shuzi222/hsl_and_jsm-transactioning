@@ -98,7 +98,7 @@ def get_btc_price():
         logging.error(f"获取价格失败: {str(e)}")
         return None
 
-def get_klines(symbol, interval, limit=100):
+def get_klines(symbol, interval, limit=50):  # 减少 limit
     rate_limit()
     try:
         timeframe_map = {'1h': '1H'}
@@ -110,7 +110,6 @@ def get_klines(symbol, interval, limit=100):
         if not klines.get('data'):
             logging.warning(f"未收到K线数据（{symbol}, {okx_interval}）")
             return None
-        logging.debug(f"K线原始数据: {klines['data'][:2]}...（共{len(klines['data'])}条）")
         df = pd.DataFrame(klines['data'], columns=[
             'timestamp', 'open', 'high', 'low', 'close', 'vol', 'volCcy', 'volCcyQuote', 'confirm'
         ])
@@ -141,8 +140,8 @@ def calculate_rsi(df, period=14):
             logging.warning(f"RSI 数据不足: {len(df)} 条")
             return None
         close = df['close'].values
-        if np.any(np.isnan(close)):
-            logging.warning("收盘价包含空值，RSI 计算可能不准确")
+        if np.any(np.isnan(close)) or np.all(close == close[0]):
+            logging.warning("收盘价无效（含空值或无变化），RSI 计算跳过")
             return None
         # 计算价格变化
         delta = np.diff(close)
@@ -156,9 +155,11 @@ def calculate_rsi(df, period=14):
         for i in range(period + 1, len(close)):
             avg_gains[i] = (avg_gains[i-1] * (period - 1) + gains[i-1]) / period
             avg_losses[i] = (avg_losses[i-1] * (period - 1) + losses[i-1]) / period
-        # 计算 RS 和 RSI
-        rs = np.where(avg_losses != 0, avg_gains / avg_losses, np.inf)
+        # 计算 RS 和 RSI，添加 epsilon 避免除零
+        epsilon = 1e-10
+        rs = avg_gains / (avg_losses + epsilon)
         rsi = 100 - (100 / (1 + rs))
+        rsi = np.where(np.isfinite(rsi), rsi, np.nan)  # 清理无效值
         latest_rsi = rsi[-1]
         if np.isnan(latest_rsi):
             logging.warning("RSI 计算结果无效")
@@ -359,66 +360,58 @@ def macd_trading():
 
 def trading_loop():
     global running, current_price
-    kline_interval_seconds = 3600  # 每小时获取一次 K 线数据
-    last_kline_request = 0
     running = True
-    while running:
-        try:
-            current_time = time.time()
-            price = get_btc_price()
-            if not price:
-                logging.warning(f"价格获取失败，使用缓存价格: ${current_price:.2f}")
+    try:
+        price = get_btc_price()
+        if not price:
+            logging.warning(f"价格获取失败，使用缓存价格: ${current_price:.2f}")
+        else:
+            with lock:
+                current_price = price
+            logging.info(f"价格更新: ${price:.2f}")
+        
+        usdt_balance, btc_balance = get_balance()
+        if usdt_balance is not None and btc_balance is not None:
+            logging.info(f"余额更新: {usdt_balance:.2f} USDT, {btc_balance:.6f} BTC")
+        else:
+            logging.warning("余额获取失败")
+        
+        if rsi_enabled:
+            df_rsi = get_klines('BTC-USDT', rsi_timeframe)
+            if df_rsi is not None:
+                rsi = calculate_rsi(df_rsi)
+                if rsi is not None and not pd.isna(rsi.iloc[-1]):
+                    with lock:
+                        global latest_rsi
+                        latest_rsi = rsi.iloc[-1]
+                    logging.info(f"RSI 更新: {latest_rsi:.2f}")
+                else:
+                    logging.warning("RSI 计算失败")
             else:
-                with lock:
-                    current_price = price
-                logging.info(f"价格更新: ${price:.2f}")
-            
-            usdt_balance, btc_balance = get_balance()
-            if usdt_balance is not None and btc_balance is not None:
-                logging.info(f"余额更新: {usdt_balance:.2f} USDT, {btc_balance:.6f} BTC")
+                logging.warning("RSI K线数据获取失败")
+        
+        if macd_enabled:
+            df_macd = get_klines('BTC-USDT', macd_timeframe)
+            if df_macd is not None:
+                macd, signal_line, histogram = calculate_macd(df_macd)
+                if macd is not None and not pd.isna(macd.iloc[-1]):
+                    with lock:
+                        global latest_macd, latest_signal, latest_histogram
+                        latest_macd = macd.iloc[-1]
+                        latest_signal = signal_line.iloc[-1]
+                        latest_histogram = histogram.iloc[-1]
+                    logging.info(f"MACD 更新: MACD={latest_macd:.2f}, 信号线={latest_signal:.2f}, 柱状图={latest_histogram:.2f}")
+                else:
+                    logging.warning("MACD 计算失败")
             else:
-                logging.warning("余额获取失败")
-            
-            if current_time - last_kline_request >= kline_interval_seconds:
-                logging.info(f"触发K线请求: 时间={datetime.now()}")
-                if rsi_enabled:
-                    df_rsi = get_klines('BTC-USDT', rsi_timeframe)
-                    if df_rsi is not None:
-                        rsi = calculate_rsi(df_rsi)
-                        if rsi is not None and not pd.isna(rsi.iloc[-1]):
-                            with lock:
-                                global latest_rsi
-                                latest_rsi = rsi.iloc[-1]
-                            logging.info(f"RSI 更新: {latest_rsi:.2f}")
-                        else:
-                            logging.warning("RSI 计算失败")
-                    else:
-                        logging.warning("RSI K线数据获取失败")
-                
-                if macd_enabled:
-                    df_macd = get_klines('BTC-USDT', macd_timeframe)
-                    if df_macd is not None:
-                        macd, signal_line, histogram = calculate_macd(df_macd)
-                        if macd is not None and not pd.isna(macd.iloc[-1]):
-                            with lock:
-                                global latest_macd, latest_signal, latest_histogram
-                                latest_macd = macd.iloc[-1]
-                                latest_signal = signal_line.iloc[-1]
-                                latest_histogram = histogram.iloc[-1]
-                            logging.info(f"MACD 更新: MACD={latest_macd:.2f}, 信号线={latest_signal:.2f}, 柱状图={latest_histogram:.2f}")
-                        else:
-                            logging.warning("MACD 计算失败")
-                    else:
-                        logging.warning("MACD K线数据获取失败")
-                
-                last_kline_request = current_time
-                logging.info("K线请求完成")
-            
-            rsi_trading()
-            macd_trading()
-        except Exception as e:
-            logging.error(f"交易循环错误: {str(e)}")
-        time.sleep(kline_interval_seconds)
+                logging.warning("MACD K线数据获取失败")
+        
+        rsi_trading()
+        macd_trading()
+    except Exception as e:
+        logging.error(f"交易循环错误: {str(e)}")
+    finally:
+        running = False  # 确保单次运行后退出
 
 def main():
     logging.info("启动交易机器人")
@@ -431,10 +424,8 @@ def main():
         return
     if init_okx(api_key, api_secret, passphrase, flag):
         try:
-            threading.Thread(target=trading_loop, daemon=True).start()
-            logging.info("交易循环已启动")
-            while True:
-                time.sleep(3600)  # 主线程每小时检查一次
+            trading_loop()  # 单次运行
+            logging.info("交易循环完成")
         except Exception as e:
             logging.error(f"交易循环错误: {str(e)}")
     else:
