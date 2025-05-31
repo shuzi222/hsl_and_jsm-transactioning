@@ -289,7 +289,7 @@ def rsi_trading():
                         last_rsi_buy_time = now
                     logging.info(f"RSI 买入成功: 数量 {quantity:.6f} BTC")
             if latest_rsi >= rsi_sell_value and btc_balance > 0 and (last_rsi_sell_time is None or (now - last_rsi_sell_time) >= cooldown):
-                quantity = btc_balance * 0.2  # 卖出 20% 的 BTC
+                quantity = btc_balance * 0.5  # 卖出 50% 的 BTC
                 order = place_order('sell', quantity)
                 if order:
                     with lock:
