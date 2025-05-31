@@ -2,7 +2,6 @@ import os
 import time
 import threading
 import pandas as pd
-import talib
 import numpy as np
 from datetime import datetime, timedelta
 import logging
@@ -13,7 +12,7 @@ import okx.Account as Account
 import okx.PublicData as PublicData
 
 # 设置日志
-log_handler = RotatingFileHandler('trading.log', maxBytes=5 * 1024 * 1024, backupCount=3, encoding='utf-8')
+log_handler = RotatingFileHandler('trading.log', maxBytes=5*1024*1024, backupCount=3, encoding='utf-8')
 log_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 logging.basicConfig(handlers=[log_handler], level=logging.INFO)
 
@@ -45,7 +44,6 @@ request_timestamps = []
 REQUEST_LIMIT = 3
 REQUEST_WINDOW = 2.0
 
-
 def rate_limit():
     with lock:
         current_time = time.time()
@@ -56,7 +54,6 @@ def rate_limit():
                 time.sleep(sleep_time)
             request_timestamps[:] = [t for t in request_timestamps if current_time - t < REQUEST_WINDOW]
         request_timestamps.append(current_time)
-
 
 def init_okx(api_key, api_secret, passphrase, flag='0'):
     global trade_client, market_client, account_client, public_client
@@ -74,7 +71,6 @@ def init_okx(api_key, api_secret, passphrase, flag='0'):
         logging.error(f"OKX API 初始化失败: {str(e)}")
         return False
 
-
 def get_server_time():
     try:
         response = public_client.get_system_time()
@@ -87,7 +83,6 @@ def get_server_time():
     except Exception as e:
         logging.error(f"获取服务器时间失败: {str(e)}")
         return datetime.now()
-
 
 def get_btc_price():
     global current_price
@@ -102,7 +97,6 @@ def get_btc_price():
     except Exception as e:
         logging.error(f"获取价格失败: {str(e)}")
         return None
-
 
 def get_klines(symbol, interval, limit=100):
     rate_limit()
@@ -141,42 +135,64 @@ def get_klines(symbol, interval, limit=100):
         logging.error(f"获取K线失败（{symbol}, {okx_interval}）: {str(e)}")
         return None
 
-
 def calculate_rsi(df, period=14):
     try:
         if len(df) < period + 1:
             logging.warning(f"RSI 数据不足: {len(df)} 条")
             return None
-        close = df['close']
-        if close.isna().any():
+        close = df['close'].values
+        if np.any(np.isnan(close)):
             logging.warning("收盘价包含空值，RSI 计算可能不准确")
             return None
-        rsi = talib.RSI(close, timeperiod=period)
-        latest_rsi = rsi.iloc[-1]
-        if pd.isna(latest_rsi):
+        # 计算价格变化
+        delta = np.diff(close)
+        gains = np.where(delta > 0, delta, 0)
+        losses = np.where(delta < 0, -delta, 0)
+        # 计算平均上涨和下跌
+        avg_gains = np.zeros(len(close))
+        avg_losses = np.zeros(len(close))
+        avg_gains[period] = np.mean(gains[:period])
+        avg_losses[period] = np.mean(losses[:period])
+        for i in range(period + 1, len(close)):
+            avg_gains[i] = (avg_gains[i-1] * (period - 1) + gains[i-1]) / period
+            avg_losses[i] = (avg_losses[i-1] * (period - 1) + losses[i-1]) / period
+        # 计算 RS 和 RSI
+        rs = np.where(avg_losses != 0, avg_gains / avg_losses, np.inf)
+        rsi = 100 - (100 / (1 + rs))
+        latest_rsi = rsi[-1]
+        if np.isnan(latest_rsi):
             logging.warning("RSI 计算结果无效")
             return None
         logging.info(f"RSI 计算: 周期={period}, 最新RSI={latest_rsi:.2f}")
-        return rsi
+        return pd.Series(rsi, index=df.index)
     except Exception as e:
         logging.error(f"RSI 计算错误: {str(e)}")
         return None
-
 
 def calculate_macd(df, fast=12, slow=26, signal=9):
     try:
         if len(df) < slow + signal - 1:
             logging.warning(f"MACD 数据不足: {len(df)} 条")
             return None, None, None
-        close = df['close']
-        macd, signal_line, histogram = talib.MACD(close, fastperiod=fast, slowperiod=slow, signalperiod=signal)
-        logging.info(
-            f"MACD 计算: MACD={macd.iloc[-1]:.2f}, 信号线={signal_line.iloc[-1]:.2f}, 柱状图={histogram.iloc[-1]:.2f}")
-        return macd, signal_line, histogram
+        close = df['close'].values
+        # 计算 EMA
+        def ema(data, period):
+            alpha = 2 / (period + 1)
+            ema = np.zeros(len(data))
+            ema[0] = data[0]
+            for i in range(1, len(data)):
+                ema[i] = alpha * data[i] + (1 - alpha) * ema[i-1]
+            return ema
+        ema_fast = ema(close, fast)
+        ema_slow = ema(close, slow)
+        macd = ema_fast - ema_slow
+        signal_line = ema(macd, signal)
+        histogram = macd - signal_line
+        logging.info(f"MACD 计算: MACD={macd[-1]:.2f}, 信号线={signal_line[-1]:.2f}, 柱状图={histogram[-1]:.2f}")
+        return pd.Series(macd, index=df.index), pd.Series(signal_line, index=df.index), pd.Series(histogram, index=df.index)
     except Exception as e:
         logging.error(f"MACD 计算错误: {str(e)}")
         return None, None, None
-
 
 def get_symbol_info(symbol='BTC-USDT'):
     rate_limit()
@@ -190,7 +206,6 @@ def get_symbol_info(symbol='BTC-USDT'):
     except Exception as e:
         logging.error(f"获取交易对信息失败: {str(e)}")
         return 8, 0.0001
-
 
 def place_order(side, quantity):
     try:
@@ -218,7 +233,6 @@ def place_order(side, quantity):
         logging.error(f"下单失败: {str(e)}")
         return None
 
-
 def get_balance():
     rate_limit()
     try:
@@ -226,16 +240,13 @@ def get_balance():
         if balance.get('code') != '0':
             raise Exception(f"获取余额失败: {balance.get('msg', '未知错误')}")
         usdt = float(
-            next((asset for asset in balance['data'][0]['details'] if asset['ccy'] == 'USDT'), {'availBal': '0'})[
-                'availBal'])
+            next((asset for asset in balance['data'][0]['details'] if asset['ccy'] == 'USDT'), {'availBal': '0'})['availBal'])
         btc = float(
-            next((asset for asset in balance['data'][0]['details'] if asset['ccy'] == 'BTC'), {'availBal': '0'})[
-                'availBal'])
+            next((asset for asset in balance['data'][0]['details'] if asset['ccy'] == 'BTC'), {'availBal': '0'})['availBal'])
         return usdt, btc
     except Exception as e:
         logging.error(f"获取余额失败: {str(e)}")
         return None, None
-
 
 def rsi_trading():
     global last_rsi_buy_time, last_rsi_sell_time, latest_rsi
@@ -276,8 +287,7 @@ def rsi_trading():
                     with lock:
                         last_rsi_buy_time = now
                     logging.info(f"RSI 买入成功: 数量 {quantity:.6f} BTC")
-            if latest_rsi >= rsi_sell_value and btc_balance > 0 and (
-                    last_rsi_sell_time is None or (now - last_rsi_sell_time) >= cooldown):
+            if latest_rsi >= rsi_sell_value and btc_balance > 0 and (last_rsi_sell_time is None or (now - last_rsi_sell_time) >= cooldown):
                 quantity = btc_balance * 0.2  # 卖出 20% 的 BTC
                 order = place_order('sell', quantity)
                 if order:
@@ -286,7 +296,6 @@ def rsi_trading():
                     logging.info(f"RSI 卖出成功: 数量 {quantity:.6f} BTC")
     except Exception as e:
         logging.error(f"RSI 交易错误: {str(e)}")
-
 
 def macd_trading():
     global last_macd_buy_time, last_macd_sell_time, latest_macd, latest_signal, latest_histogram
@@ -323,9 +332,9 @@ def macd_trading():
                 return
             cooldown = timedelta(hours=1)
             now = datetime.now()
-            if (latest_macd < 0 and prev_macd < prev_signal and
-                    latest_macd > latest_signal and latest_histogram > 0 and
-                    (last_macd_buy_time is None or (now - last_macd_buy_time) >= cooldown)):
+            if (latest_macd < 0 and prev_macd < prev_signal and 
+                latest_macd > latest_signal and latest_histogram > 0 and 
+                (last_macd_buy_time is None or (now - last_macd_buy_time) >= cooldown)):
                 quantity = (usdt_balance * macd_buy_ratio / 100) / current_price
                 if quantity <= 0:
                     logging.warning("MACD 买入失败: 余额不足")
@@ -335,10 +344,10 @@ def macd_trading():
                     with lock:
                         last_macd_buy_time = now
                     logging.info(f"MACD 买入成功: 数量 {quantity:.6f} BTC")
-            if (latest_macd > 0 and prev_macd > prev_signal and
-                    latest_macd < latest_signal and latest_histogram < 0 and
-                    btc_balance > 0 and
-                    (last_macd_sell_time is None or (now - last_macd_sell_time) >= cooldown)):
+            if (latest_macd > 0 and prev_macd > prev_signal and 
+                latest_macd < latest_signal and latest_histogram < 0 and 
+                btc_balance > 0 and 
+                (last_macd_sell_time is None or (now - last_macd_sell_time) >= cooldown)):
                 quantity = btc_balance * 0.2  # 卖出 20% 的 BTC
                 order = place_order('sell', quantity)
                 if order:
@@ -347,7 +356,6 @@ def macd_trading():
                     logging.info(f"MACD 卖出成功: 数量 {quantity:.6f} BTC")
     except Exception as e:
         logging.error(f"MACD 交易错误: {str(e)}")
-
 
 def trading_loop():
     global running, current_price
@@ -364,13 +372,13 @@ def trading_loop():
                 with lock:
                     current_price = price
                 logging.info(f"价格更新: ${price:.2f}")
-
+            
             usdt_balance, btc_balance = get_balance()
             if usdt_balance is not None and btc_balance is not None:
                 logging.info(f"余额更新: {usdt_balance:.2f} USDT, {btc_balance:.6f} BTC")
             else:
                 logging.warning("余额获取失败")
-
+            
             if current_time - last_kline_request >= kline_interval_seconds:
                 logging.info(f"触发K线请求: 时间={datetime.now()}")
                 if rsi_enabled:
@@ -386,7 +394,7 @@ def trading_loop():
                             logging.warning("RSI 计算失败")
                     else:
                         logging.warning("RSI K线数据获取失败")
-
+                
                 if macd_enabled:
                     df_macd = get_klines('BTC-USDT', macd_timeframe)
                     if df_macd is not None:
@@ -397,22 +405,20 @@ def trading_loop():
                                 latest_macd = macd.iloc[-1]
                                 latest_signal = signal_line.iloc[-1]
                                 latest_histogram = histogram.iloc[-1]
-                            logging.info(
-                                f"MACD 更新: MACD={latest_macd:.2f}, 信号线={latest_signal:.2f}, 柱状图={latest_histogram:.2f}")
+                            logging.info(f"MACD 更新: MACD={latest_macd:.2f}, 信号线={latest_signal:.2f}, 柱状图={latest_histogram:.2f}")
                         else:
                             logging.warning("MACD 计算失败")
                     else:
                         logging.warning("MACD K线数据获取失败")
-
+                
                 last_kline_request = current_time
                 logging.info("K线请求完成")
-
+            
             rsi_trading()
             macd_trading()
         except Exception as e:
             logging.error(f"交易循环错误: {str(e)}")
         time.sleep(kline_interval_seconds)
-
 
 def main():
     logging.info("启动交易机器人")
@@ -433,7 +439,6 @@ def main():
             logging.error(f"交易循环错误: {str(e)}")
     else:
         logging.error("初始化 OKX API 失败")
-
 
 if __name__ == "__main__":
     try:
