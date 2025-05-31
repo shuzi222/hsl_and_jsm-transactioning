@@ -98,7 +98,7 @@ def get_btc_price():
         logging.error(f"获取价格失败: {str(e)}")
         return None
 
-def get_klines(symbol, interval, limit=50):  # 减少 limit
+def get_klines(symbol, interval, limit=100):  # 减少 limit
     rate_limit()
     try:
         timeframe_map = {'1h': '1H'}
