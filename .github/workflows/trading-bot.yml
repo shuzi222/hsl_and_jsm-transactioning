@@ -21,7 +21,7 @@ jobs:
           python-version: '3.x'
       - name: Install dependencies
         run: |
-          pip install python-okx pandas numpy python-ta-lib
+          pip install python-okx pandas numpy
       - name: Run trading bot
         run: python github-OKX.py
       - name: Upload logs
