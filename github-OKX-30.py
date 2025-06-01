@@ -102,7 +102,7 @@ def get_btc_price():
 def get_klines(symbol, interval, limit='100'):
     rate_limit()
     try:
-        timeframe_map = {'30m': '30min', '1h': '1H'}  # 添加 30m 分钟映射
+        timeframe_map = {'30m': '30m', '1h': '1H'}  # 添加 30m 分钟映射
         okx_interval = timeframe_map.get(interval, '30m')  # 默认 30m
         klines = market_client.get_candlesticks(instId=symbol, bar=okx_interval, limit=str(limit))
         if not klines.get('data'):
