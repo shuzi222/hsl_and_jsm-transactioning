@@ -257,6 +257,16 @@ def rsi_trading():
         return
     try:
         logging.info("进入 RSI 交易逻辑")
+        usdt_balance, btc_balance = get_balance()
+        if usdt_balance is None or btc_balance is None:
+            logging.warning("RSI 交易跳过: 获取余额失败")
+            return
+        logging.info(f"RSI 交易检查余额: {usdt_balance:.2f} USDT, {btc_balance:.6f} BTC")
+        
+        if usdt_balance == 0 and btc_balance == 0:
+            logging.warning("RSI 交易跳过: 余额为 0")
+            return
+        
         df = get_klines('BTC-USDT', rsi_timeframe)
         if df is None:
             logging.warning("RSI 交易跳过: 无K线数据")
@@ -271,11 +281,6 @@ def rsi_trading():
             return
         with lock:
             latest_rsi = latest_rsi_value
-        usdt_balance, btc_balance = get_balance()
-        if usdt_balance is None or btc_balance is None:
-            logging.warning("RSI 交易跳过: 获取余额失败")
-            return
-        logging.info(f"RSI 交易检查余额: {usdt_balance:.2f} USDT, {btc_balance:.6f} BTC")
         
         with lock:
             if current_price <= 0:
@@ -324,6 +329,16 @@ def macd_trading():
         return
     try:
         logging.info("进入 MACD 交易逻辑")
+        usdt_balance, btc_balance = get_balance()
+        if usdt_balance is None or btc_balance is None:
+            logging.warning("MACD 交易跳过: 获取余额失败")
+            return
+        logging.info(f"MACD 交易检查余额: {usdt_balance:.2f} USDT, {btc_balance:.6f} BTC")
+        
+        if usdt_balance == 0 and btc_balance == 0:
+            logging.warning("MACD 交易跳过: 余额为 0")
+            return
+        
         df = get_klines('BTC-USDT', macd_timeframe)
         if df is None:
             logging.warning("MACD 交易跳过: 无K线数据")
@@ -344,11 +359,6 @@ def macd_trading():
             latest_macd = latest_macd_value
             latest_signal = latest_signal_value
             latest_histogram = latest_histogram_value
-        usdt_balance, btc_balance = get_balance()
-        if usdt_balance is None or btc_balance is None:
-            logging.warning("MACD 交易跳过: 获取余额失败")
-            return
-        logging.info(f"MACD 交易检查余额: {usdt_balance:.2f} USDT, {btc_balance:.6f} BTC")
         
         with lock:
             if current_price <= 0:
@@ -394,7 +404,7 @@ def macd_trading():
                 logging.info(f"MACD 卖出未触发: MACD={latest_macd:.2f}, 信号线={latest_signal:.2f}, 柱状图={latest_histogram:.2f}, BTC余额={btc_balance:.6f}, 冷却时间={last_macd_sell_time}")
     except Exception as e:
         logging.error(f"MACD 交易错误: {str(e)}")
-
+        
 def trading_loop():
     start_time = time.time()
     logging.info(f"交易循环开始: {start_time}")
@@ -414,11 +424,6 @@ def trading_loop():
             logging.warning("余额获取失败，跳过交易")
             return
         logging.info(f"余额更新: {usdt_balance:.2f} USDT, {btc_balance:.6f} BTC")
-        
-        # 提前检查余额
-        if usdt_balance == 0 and btc_balance == 0:
-            logging.warning("余额为 0，跳过 RSI 和 MACD 交易")
-            return
         
         df = get_klines('BTC-USDT', '1h', limit=100)
         if df is None:
@@ -441,7 +446,7 @@ def trading_loop():
                     latest_macd = macd.iloc[-1]
                     latest_signal = signal_line.iloc[-1]
                     latest_histogram = histogram.iloc[-1]
-                logging.info(f"MACD 更新: MACD={latest_macd:.2f}, 信号线={latest_signal:.2f}, 柱状图={histogram:.2f}")
+                logging.info(f"MACD 更新: MACD={latest_macd:.2f}, 信号线={latest_signal:.2f}, 柱状图={latest_histogram:.2f}")  # 修复
             else:
                 logging.warning("MACD 计算失败")
         
