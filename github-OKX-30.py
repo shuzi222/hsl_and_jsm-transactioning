@@ -109,7 +109,7 @@ def get_klines(symbol, interval, limit='100'):
             logging.warning(f"未收到实时 K线数据（{symbol}, {okx_interval}），尝试获取历史 K 线数据")
             klines = market_client.get_history_candlesticks(instId=symbol, bar=okx_interval, limit=str(limit))
         if not klines.get('data'):
-            logging.warning(f"未收到 K线数据（{{symbol}, {okx_interval}）")
+            logging.warning(f"未收到 K线数据（{symbol}, {okx_interval}）")
             return None
         df = pd.DataFrame(klines['data'], columns=[
             'timestamp', 'open', 'high', 'low', 'close', 'vol', 'volCcy', 'volCcyQuote', 'confirm'
@@ -118,11 +118,11 @@ def get_klines(symbol, interval, limit='100'):
         df = df.sort_values(by='timestamp', ascending=True).reset_index(drop=True)
         df = df[df['confirm'] == '1']
         if df.empty:
-            logging.warning(f"无已确认的 K线数据（{{symbol}, {okx_interval}）")
+            logging.warning(f"无已确认的 K线数据（{symbol}, {okx_interval}）")
             return None
         df['close'] = pd.to_numeric(df['close'], errors='coerce')
         if df['close'].isna().any():
-            logging.warning(f"K线数据中存在空值（{{symbol}, {okx_interval}），已尝试填补")
+            logging.warning(f"K线数据中存在空值（{symbol}, {okx_interval}），已尝试填补")
             df['close'] = df['close'].fillna(method='ffill')
         server_time = get_server_time()
         latest_kline_time = df['timestamp'].iloc[-1]
@@ -132,7 +132,7 @@ def get_klines(symbol, interval, limit='100'):
         logging.info(f"获取 K线数据: {len(df)} 条, 最新 K线时间: {latest_kline_time}, 收盘价: {df['close'].iloc[-1]:.2f}")
         return df
     except Exception as e:
-        logging.error(f"获取 K线失败（{{symbol}}, {okx_interval}）: {str(e)}")
+        logging.error(f"获取 K线失败（{symbol}}, {okx_interval}）: {str(e)}")
         return None
 
 def calculate_rsi(df, period=14):
