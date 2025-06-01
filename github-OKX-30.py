@@ -132,7 +132,7 @@ def get_klines(symbol, interval, limit='100'):
         logging.info(f"获取 K线数据: {len(df)} 条, 最新 K线时间: {latest_kline_time}, 收盘价: {df['close'].iloc[-1]:.2f}")
         return df
     except Exception as e:
-        logging.error(f"获取 K线失败（{symbol}}, {okx_interval}）: {str(e)}")
+        logging.error(f"获取 K线失败（{symbol}, {okx_interval}）: {str(e)}")
         return None
 
 def calculate_rsi(df, period=14):
