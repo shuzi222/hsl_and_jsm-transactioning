@@ -41,7 +41,7 @@ latest_histogram = None
 running = False
 lock = threading.Lock()
 request_timestamps = []
-REQUEST_LIMIT = 3
+REQUEST_LIMIT = 9
 REQUEST_WINDOW = 2.0
 
 def rate_limit():
