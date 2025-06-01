@@ -106,7 +106,7 @@ def get_klines(symbol, interval, limit='100'):
         okx_interval = timeframe_map.get(interval, '30m')  # 默认 30m
         klines = market_client.get_candlesticks(instId=symbol, bar=okx_interval, limit=str(limit))
         if not klines.get('data'):
-            logging.warning(f"未收到实时 K线数据（{symbol}, {okx_interval}），尝试获取历史 K 线数据"):
+            logging.warning(f"未收到实时 K线数据（{symbol}, {okx_interval}），尝试获取历史 K 线数据")
             klines = market_client.get_history_candlesticks(instId=symbol, bar=okx_interval, limit=str(limit))
         if not klines.get('data'):
             logging.warning(f"未收到 K线数据（{{symbol}, {okx_interval}）")
