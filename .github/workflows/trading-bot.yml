@@ -8,7 +8,7 @@ on:
 jobs:
   trade:
     runs-on: ubuntu-latest
-    timeout-minutes: 2  # 限制最大运行时间
+    timeout-minutes: 1  # 限制最大运行时间
     env:
       OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
       OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
