@@ -8,6 +8,7 @@ on:
 jobs:
   run-trading-bot:
     runs-on: ubuntu-latest
+    timeout-minutes: 2  # 限制最大运行时间
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
