@@ -3,7 +3,6 @@ from logging.handlers import RotatingFileHandler
 import os
 import json
 import time
-from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 import okx.Trade as Trade
@@ -20,7 +19,7 @@ logging.basicConfig(
 )
 
 # API 密钥存储文件
-CONFIG_FILE = 'okx_config.json'
+CONFIG_FILE = 'okx_config.json'# 备用的
 
 # 全局变量
 trade_client = None
@@ -32,22 +31,16 @@ latest_rsi = None
 latest_macd = None
 latest_signal = None
 latest_histogram = None
-running = True
-last_rsi_buy_time = None
-last_rsi_sell_time = None
-last_macd_buy_time = None
-last_macd_sell_time = None
 
 # 固定交易参数
 TIMEFRAME = '1H'  # 1小时周期
 RSI_BUY_VALUE = 25.0  # RSI 低于25开多
 RSI_SELL_VALUE = 75.0  # RSI 高于75开空
-BUY_RATIO = 0.05  # 每次开仓使用5% USDT
+BUY_RATIO = 0.2  # 每次开仓使用20% USDT
 LEVERAGE = 10.0  # 10倍杠杆
 MARGIN_MODE = 'cross'  # 全仓模式
 TAKE_PROFIT = 12.0  # 12%止盈
 STOP_LOSS = 8.0  # 8%止损
-COOLDOWN = timedelta(hours=1)  # 1小时冷却时间
 
 def load_config():
     if os.path.exists(CONFIG_FILE):
@@ -100,34 +93,40 @@ def set_leverage(symbol):
 
 def get_btc_price():
     global current_price
-    try:
-        ticker = market_client.get_ticker(instId='BTC-USDT-SWAP')
-        if ticker.get('code') != '0':
-            raise Exception(f"获取行情失败: {ticker.get('msg', '未知错误')}")
-        current_price = float(ticker['data'][0]['last'])
-        return current_price
-    except Exception as e:
-        logging.error(f"获取价格失败: {str(e)}")
-        return None
+    for attempt in range(3):
+        try:
+            ticker = market_client.get_ticker(instId='BTC-USDT-SWAP')
+            if ticker.get('code') != '0':
+                raise Exception(f"获取行情失败: {ticker.get('msg', '未知错误')}")
+            current_price = float(ticker['data'][0]['last'])
+            return current_price
+        except Exception as e:
+            logging.error(f"获取价格失败 (尝试 {attempt + 1}/3): {str(e)}")
+            time.sleep(2)
+    logging.error("获取价格失败，重试次数耗尽")
+    return None
 
 def get_klines(symbol, interval, limit=100):
-    try:
-        klines = market_client.get_candlesticks(instId=symbol, bar=interval, limit=str(limit))
-        if not klines.get('data'):
-            logging.warning(f"无K线数据: {symbol}, {interval}")
-            return None
-        df = pd.DataFrame(klines['data'], columns=['ts', 'open', 'high', 'low', 'close', 'vol', 'volCcy', 'volCcyQuote', 'confirm'])
-        df['ts'] = pd.to_datetime(df['ts'].astype(float), unit='ms')
-        df[['open', 'high', 'low', 'close']] = df[['open', 'high', 'low', 'close']].astype(float)
-        df = df.sort_values('ts').reset_index(drop=True)
-        if df.empty:
-            logging.warning(f"无有效K线数据: {symbol}, {interval}")
-            return None
-        logging.info(f"获取K线数据: {len(df)} 条, 最新时间: {df['ts'].iloc[-1]}")
-        return df
-    except Exception as e:
-        logging.error(f"获取K线错误: {str(e)}\n{traceback.format_exc()}")
-        return None
+    for attempt in range(3):
+        try:
+            klines = market_client.get_candlesticks(instId=symbol, bar=interval, limit=str(limit))
+            if not klines.get('data'):
+                logging.warning(f"无K线数据: {symbol}, {interval}")
+                return None
+            df = pd.DataFrame(klines['data'], columns=['ts', 'open', 'high', 'low', 'close', 'vol', 'volCcy', 'volCcyQuote', 'confirm'])
+            df['ts'] = pd.to_datetime(df['ts'].astype(float), unit='ms')
+            df[['open', 'high', 'low', 'close']] = df[['open', 'high', 'low', 'close']].astype(float)
+            df = df.sort_values('ts').reset_index(drop=True)
+            if df.empty:
+                logging.warning(f"无有效K线数据: {symbol}, {interval}")
+                return None
+            logging.info(f"获取K线数据: {len(df)} 条, 最新时间: {df['ts'].iloc[-1]}")
+            return df
+        except Exception as e:
+            logging.error(f"获取K线错误 (尝试 {attempt + 1}/3): {str(e)}")
+            time.sleep(2)
+    logging.error("获取K线失败，重试次数耗尽")
+    return None
 
 def calculate_rsi(df, period=14):
     try:
@@ -227,32 +226,35 @@ def place_order(side, pos_side, quantity):
         return None
 
 def get_balance():
-    try:
-        balance = account_client.get_account_balance()
-        if balance.get('code') != '0':
-            raise Exception(f"获取余额失败: {balance.get('msg', '未知错误')}")
-        usdt = float(next((asset for asset in balance['data'][0]['details'] if asset['ccy'] == 'USDT'), {'availEq': '0'})['availEq'])
-        total_equity = float(balance['data'][0]['totalEq'])
-        positions = account_client.get_positions(instType='SWAP', instId='BTC-USDT-SWAP')
-        long_qty = 0
-        short_qty = 0
-        long_avg_price = 0.0
-        short_avg_price = 0.0
-        if positions.get('code') == '0' and positions.get('data'):
-            for pos in positions['data']:
-                if pos['instId'] == 'BTC-USDT-SWAP':
-                    qty = float(pos['pos'])
-                    avg_price = float(pos['avgPx']) if pos['avgPx'] else 0.0
-                    if pos['posSide'] == 'long':
-                        long_qty = qty
-                        long_avg_price = avg_price
-                    elif pos['posSide'] == 'short':
-                        short_qty = qty
-                        short_avg_price = avg_price
-        return usdt, long_qty, short_qty, long_avg_price, short_avg_price, total_equity
-    except Exception as e:
-        logging.error(f"获取余额失败: {str(e)}")
-        return None, None, None, None, None, None
+    for attempt in range(3):
+        try:
+            balance = account_client.get_account_balance()
+            if balance.get('code') != '0':
+                raise Exception(f"获取余额失败: {balance.get('msg', '未知错误')}")
+            usdt = float(next((asset for asset in balance['data'][0]['details'] if asset['ccy'] == 'USDT'), {'availEq': '0'})['availEq'])
+            total_equity = float(balance['data'][0]['totalEq'])
+            positions = account_client.get_positions(instType='SWAP', instId='BTC-USDT-SWAP')
+            long_qty = 0
+            short_qty = 0
+            long_avg_price = 0.0
+            short_avg_price = 0.0
+            if positions.get('code') == '0' and positions.get('data'):
+                for pos in positions['data']:
+                    if pos['instId'] == 'BTC-USDT-SWAP':
+                        qty = float(pos['pos'])
+                        avg_price = float(pos['avgPx']) if pos['avgPx'] else 0.0
+                        if pos['posSide'] == 'long':
+                            long_qty = qty
+                            long_avg_price = avg_price
+                        elif pos['posSide'] == 'short':
+                            short_qty = qty
+                            short_avg_price = avg_price
+            return usdt, long_qty, short_qty, long_avg_price, short_avg_price, total_equity
+        except Exception as e:
+            logging.error(f"获取余额失败 (尝试 {attempt + 1}/3): {str(e)}")
+            time.sleep(2)
+    logging.error("获取余额失败，重试次数耗尽")
+    return None, None, None, None, None, None
 
 def check_take_profit_stop_loss(long_qty, short_qty, long_avg_price, short_avg_price, current_price, rsi, macd, signal):
     try:
@@ -301,7 +303,7 @@ def check_take_profit_stop_loss(long_qty, short_qty, long_avg_price, short_avg_p
         return None, 0, None
 
 def trading_cycle():
-    global last_rsi_buy_time, last_rsi_sell_time, last_macd_buy_time, last_macd_sell_time, current_price, latest_rsi, latest_macd, latest_signal, latest_histogram
+    global current_price, latest_rsi, latest_macd, latest_signal, latest_histogram
     try:
         logging.info("开始交易周期")
         df = get_klines('BTC-USDT-SWAP', TIMEFRAME)
@@ -332,60 +334,72 @@ def trading_cycle():
             logging.warning("无法获取价格，跳过交易")
             return
 
-        now = datetime.now()
+        logging.info(f"账户状态: USDT余额={usdt_balance:.2f}, 总权益={total_equity:.2f}, 多仓={long_qty:.0f}, 空仓={short_qty:.0f}")
+
+        # 检查止盈止损或反向信号，优先平仓
         pos_side, qty, reason = check_take_profit_stop_loss(long_qty, short_qty, long_avg_price, short_avg_price, current_price, latest_rsi, macd, signal)
         if pos_side and qty > 0:
             order = place_order('sell' if pos_side == 'long' else 'buy', pos_side, qty)
             if order:
                 logging.info(f"平仓: {reason}, 数量 {qty:.0f} 张")
-                if pos_side == 'long':
-                    last_rsi_buy_time = last_macd_buy_time = None
+                # 重新获取余额和持仓，确保平仓后状态更新
+                usdt_balance, long_qty, short_qty, long_avg_price, short_avg_price, total_equity = get_balance()
+                if usdt_balance is None:
+                    logging.warning("平仓后获取余额失败，跳过开仓")
+                    return
+                logging.info(f"平仓后账户状态: USDT余额={usdt_balance:.2f}, 总权益={total_equity:.2f}, 多仓={long_qty:.0f}, 空仓={short_qty:.0f}")
+
+        # 仅当无仓位时允许开新仓
+        if long_qty == 0 and short_qty == 0:
+            max_quantity = (total_equity * BUY_RATIO) / current_price * LEVERAGE
+            if latest_rsi <= RSI_BUY_VALUE:
+                quantity = min((usdt_balance * BUY_RATIO) / current_price * LEVERAGE, max_quantity)
+                if quantity > 0:
+                    order = place_order('buy', 'long', quantity)
+                    if order:
+                        logging.info(f"RSI 开多: 数量 {quantity:.0f} 张")
                 else:
-                    last_rsi_sell_time = last_macd_sell_time = None
-            return
+                    logging.info("RSI 未开多: 余额不足或数量过小")
+                return
+            else:
+                logging.info(f"RSI 未开多: RSI={latest_rsi:.2f} 未达买入阈值 {RSI_BUY_VALUE}")
 
-        max_quantity = (total_equity * BUY_RATIO) / current_price * LEVERAGE
-        if latest_rsi <= RSI_BUY_VALUE and (last_rsi_buy_time is None or (now - last_rsi_buy_time) >= COOLDOWN):
-            quantity = min((usdt_balance * BUY_RATIO) / current_price * LEVERAGE, max_quantity)
-            if quantity > 0:
-                order = place_order('buy', 'long', quantity)
-                if order:
-                    last_rsi_buy_time = now
-                    logging.info(f"RSI 开多: 数量 {quantity:.0f} 张")
-        elif latest_rsi >= RSI_SELL_VALUE and (last_rsi_sell_time is None or (now - last_rsi_sell_time) >= COOLDOWN):
-            if long_qty > 0:
-                order = place_order('sell', 'long', long_qty)
-                if order:
-                    last_rsi_sell_time = now
-                    logging.info(f"RSI 平多: 数量 {long_qty:.0f} 张")
-            elif short_qty == 0:
+            if latest_rsi >= RSI_SELL_VALUE:
                 quantity = min((usdt_balance * BUY_RATIO) / current_price * LEVERAGE, max_quantity)
-                order = place_order('sell', 'short', quantity)
-                if order:
-                    last_rsi_sell_time = now
-                    logging.info(f"RSI 开空: 数量 {quantity:.0f} 张")
+                if quantity > 0:
+                    order = place_order('sell', 'short', quantity)
+                    if order:
+                        logging.info(f"RSI 开空: 数量 {quantity:.0f} 张")
+                else:
+                    logging.info("RSI 未开空: 余额不足或数量过小")
+                return
+            else:
+                logging.info(f"RSI 未开空: RSI={latest_rsi:.2f} 未达卖出阈值 {RSI_SELL_VALUE}")
 
-        if (latest_macd < 0 and latest_macd > latest_signal and macd.iloc[-2] <= signal.iloc[-2] and latest_histogram > 0 and
-                (last_macd_buy_time is None or (now - last_macd_buy_time) >= COOLDOWN)):
-            quantity = min((usdt_balance * BUY_RATIO) / current_price * LEVERAGE, max_quantity)
-            if quantity > 0:
-                order = place_order('buy', 'long', quantity)
-                if order:
-                    last_macd_buy_time = now
-                    logging.info(f"MACD 开多: 数量 {quantity:.0f} 张")
-        elif (latest_macd > 0 and latest_macd < latest_signal and macd.iloc[-2] >= signal.iloc[-2] and latest_histogram < 0 and
-              (last_macd_sell_time is None or (now - last_macd_sell_time) >= COOLDOWN)):
-            if long_qty > 0:
-                order = place_order('sell', 'long', long_qty)
-                if order:
-                    last_macd_sell_time = now
-                    logging.info(f"MACD 平多: 数量 {long_qty:.0f} 张")
-            elif short_qty == 0:
+            if latest_macd < 0 and latest_macd > latest_signal and macd.iloc[-2] <= signal.iloc[-2] and latest_histogram > 0:
+                logging.info("MACD 检测到负区金叉")
                 quantity = min((usdt_balance * BUY_RATIO) / current_price * LEVERAGE, max_quantity)
-                order = place_order('sell', 'short', quantity)
-                if order:
-                    last_macd_sell_time = now
-                    logging.info(f"MACD 开空: 数量 {quantity:.0f} 张")
+                if quantity > 0:
+                    order = place_order('buy', 'long', quantity)
+                    if order:
+                        logging.info(f"MACD 开多: 数量 {quantity:.0f} 张")
+                else:
+                    logging.info("MACD 未开多: 余额不足或数量过小")
+                return
+            elif latest_macd > 0 and latest_macd < latest_signal and macd.iloc[-2] >= signal[-2] and latest_histogram < 0:
+                logging.info("MACD 检测到正区死叉")
+                quantity = min((usdt_balance * BUY_RATIO) / current_price * LEVERAGE, max_quantity)
+                if quantity > 0:
+                    order = place_order('sell', 'short', quantity)
+                    if order:
+                        logging.info(f"MACD 开空: 数量 {quantity:.0f} 张")
+                else:
+                    logging.info("MACD 未开空: 余额不足或数量过小")
+                return
+            else:
+                logging.info("MACD 未形成金叉或死叉")
+        else:
+            logging.info(f"未开新仓: 当前持仓 多仓={long_qty:.0f}, 空仓={short_qty:.0f}")
     except Exception as e:
         logging.error(f"交易周期错误: {str(e)}\n{traceback.format_exc()}")
 
@@ -397,7 +411,7 @@ def main():
         passphrase = config.get('passphrase') or os.getenv('OKX_PASSPHRASE')
         if not all([api_key, api_secret, passphrase]):
             logging.error("API 密钥未配置")
-            return
+            raise ValueError("API 密钥未配置")
 
         for flag in ['0', '1']:
             if init_okx(api_key, api_secret, passphrase, flag):
@@ -405,14 +419,11 @@ def main():
                 break
         else:
             logging.error("API 初始化失败")
-            return
+            raise Exception("API 初始化失败")
 
         set_leverage('BTC-USDT-SWAP')
-
-        while running:
-            trading_cycle()
-            logging.info("交易周期完成，等待下一小时")
-            time.sleep(3600)
+        trading_cycle()
+        logging.info("交易周期完成，程序退出")
     except Exception as e:
         logging.error(f"主程序错误: {str(e)}\n{traceback.format_exc()}")
         raise
