@@ -1,4 +1,4 @@
-name: Trading Bot
+name:  OKX HY-Trading Bot
 
 on:
   schedule:
