@@ -120,6 +120,12 @@ def get_klines(symbol, interval, limit=100):
             if df.empty:
                 logging.warning(f"无有效K线数据: {symbol}, {interval}")
                 return None
+            if df['close'].isna().any() or (df['close'] <= 0).any():
+                logging.warning(f"K线数据异常: 包含 {df['close'].isna().sum()} 个 NaN，{len(df[df['close'] <= 0])} 个无效收盘价 (<= 0)")
+                return None
+            logging.info(f"  # 记录统计信息
+                K 线数据统计: 长度={len(df)}, 收盘价最小={df['close'].min():.2f}, 最大={df['close'].max():.2f}, NaN={df['close'].isna().sum()}
+            )
             logging.info(f"获取K线数据: {len(df)} 条, 最新时间: {df['ts'].iloc[-1]}")
             return df
         except Exception as e:
