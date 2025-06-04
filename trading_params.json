@@ -100,11 +100,11 @@
       "description": "ATR基准值，用于计算动态仓位比例"
     },
     "BUY_RATIO_MIN": {
-      "value": 0.05,
+      "value": 0.01,
       "description": "最小仓位比例，范围0-1"
     },
     "BUY_RATIO_MAX": {
-      "value": 0.15,
+      "value": 0.1,
       "description": "最大仓位比例，范围0-1"
     }
   },
@@ -155,11 +155,11 @@
       "description": "ATR基准值，用于计算动态仓位比例"
     },
     "BUY_RATIO_MIN": {
-      "value": 0.05,
+      "value": 0.01,
       "description": "最小仓位比例，范围0-1"
     },
     "BUY_RATIO_MAX": {
-      "value": 0.1,
+      "value": 0.08,
       "description": "最大仓位比例，范围0-1"
     }
   }
