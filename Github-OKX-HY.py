@@ -39,8 +39,8 @@ RSI_SELL_VALUE = 73.0  # RSI 高于73开空
 BUY_RATIO = 0.1  # 每次开仓使用20% USDT
 LEVERAGE = 20.0  # 10倍杠杆
 MARGIN_MODE = 'cross'  # 全仓模式
-TAKE_PROFIT = 24.0  # 24%止盈
-STOP_LOSS = 6.0  # 6%止损
+TAKE_PROFIT = 10.0  # 10%止盈
+STOP_LOSS = 5.0  # 5%止损
 
 def load_config():
     if os.path.exists(CONFIG_FILE):
