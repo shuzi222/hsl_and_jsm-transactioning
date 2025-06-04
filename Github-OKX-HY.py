@@ -36,11 +36,11 @@ latest_histogram = None
 TIMEFRAME = '1H'  # 1小时周期
 RSI_BUY_VALUE = 26.0  # RSI 低于26开多
 RSI_SELL_VALUE = 73.0  # RSI 高于73开空
-BUY_RATIO = 0.2  # 每次开仓使用20% USDT
-LEVERAGE = 10.0  # 10倍杠杆
+BUY_RATIO = 0.1  # 每次开仓使用20% USDT
+LEVERAGE = 20.0  # 10倍杠杆
 MARGIN_MODE = 'cross'  # 全仓模式
-TAKE_PROFIT = 12.0  # 12%止盈
-STOP_LOSS = 6.0  # 6%止损
+TAKE_PROFIT = 25.0  # 25%止盈
+STOP_LOSS = 12.0  # 12%止损
 
 def load_config():
     if os.path.exists(CONFIG_FILE):
