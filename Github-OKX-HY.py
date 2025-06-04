@@ -127,7 +127,7 @@ def get_klines(symbol, interval, limit=100):
                 logging.warning(f"有效K线数据不足: {len(df)} 条，需至少 34 条")
                 return None
             # 检查时间戳连续性
-            if not df['ts'].diff().iloc[1:].eq(pd.minutes=15).all():
+            if not df['ts'].diff().iloc[1:].eq(pd.Timedelta(minutes=15)).all():
                 logging.warning("K线时间戳不连续")
                 return None
             logging.info(f"K线数据统计: 长度={len(df)}, 收盘价最小={df['close'].min():.2f}, 最大={df['close'].max():.2f}, NaN={df['close'].isna().sum()}")
