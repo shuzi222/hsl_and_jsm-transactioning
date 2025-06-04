@@ -220,6 +220,16 @@ def place_order(side, pos_side, quantity):
             logging.warning(f"下单失败: 数量 {quantity} 张小于最小值 {min_qty} 张")
             return None
         set_leverage('BTC-USDT-SWAP')
+        # 构建止盈止损参数
+        algo_order = {
+            'tpTriggerPx': str(round(current_price * (1 + TAKE_PROFIT / 100 if pos_side == 'long' else 1 - TAKE_PROFIT / 100), 2)),
+            'tpOrdPx': '-1',  # 市价止盈
+            'slTriggerPx': str(round(current_price * (1 - STOP_LOSS / 100 if pos_side == 'long' else 1 + STOP_LOSS / 100), 2)),
+            'slOrdPx': '-1',  # 市价止损
+            'tpOrdKind': 'condition',  # 条件单
+            'slTriggerPxType': 'last',  # 触发价类型：最新价格
+            'tpTriggerPxType': 'last'   # 触发价类型：最新价格
+        }
         params = {
             'instId': 'BTC-USDT-SWAP',
             'tdMode': MARGIN_MODE,
@@ -228,10 +238,7 @@ def place_order(side, pos_side, quantity):
             'ordType': 'market',
             'sz': str(quantity),
             'clOrdId': f"order_{int(time.time())}",
-            'tpTriggerPx': str(round(current_price * (1 + TAKE_PROFIT / 100 if pos_side == 'long' else 1 - TAKE_PROFIT / 100), 2)),
-            'tpOrdPx': '-1',
-            'slTriggerPx': str(round(current_price * (1 - STOP_LOSS / 100 if pos_side == 'long' else 1 + STOP_LOSS / 100), 2)),
-            'slOrdPx': '-1'
+            'attachAlgoOrds': [algo_order]  # 将止盈止损参数放入数组
         }
         order = trade_client.place_order(**params)
         if order['code'] == '0':
