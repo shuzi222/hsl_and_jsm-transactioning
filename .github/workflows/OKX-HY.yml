@@ -2,13 +2,13 @@ name:  OKX HY-Trading Bot
 
 on:
   schedule:
-    - cron: '0 * * * *'  # 每小时整点运行
+    - cron: '0,10,20,30,40,50 * * * *'  # 每小时整点运行
   workflow_dispatch:  # 支持手动触发
 
 jobs:
   run-trading-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 2  # 限制最大运行时间
+    timeout-minutes: 5  # 限制最大运行时间
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
