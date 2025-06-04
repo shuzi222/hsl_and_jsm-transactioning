@@ -1,47 +1,166 @@
 {
   "BTC-USDT-SWAP": {
-    "RSI_TIMEFRAME": "15m",
-    "MACD_TIMEFRAME": "1H",
-    "RSI_BUY_VALUE": 26.0,
-    "RSI_SELL_VALUE": 73.0,
-    "BUY_RATIO": 0.1,
-    "LEVERAGE": 20.0,
-    "MARGIN_MODE": "cross",
-    "TAKE_PROFIT": 10.0,
-    "STOP_LOSS": 5.0,
-    "ATR_PERIOD": 14,
-    "ATR_BASE": 1000.0,
-    "BUY_RATIO_MIN": 0.05,
-    "BUY_RATIO_MAX": 0.2
+    "RSI_TIMEFRAME": {
+      "value": "15m",
+      "description": "RSI指标的K线周期（如'15m'表示15分钟(注意分钟要用小写m，小时用大写H（别问我为什么，问OK那帮SB去"
+    },
+    "MACD_TIMEFRAME": {
+      "value": "1H",
+      "description": "MACD指标的K线周期（如'1H'表示1小时）"
+    },
+    "RSI_BUY_VALUE": {
+      "value": 26.0,
+      "description": "RSI低于此值时触发买入（开多），范围0-100"
+    },
+    "RSI_SELL_VALUE": {
+      "value": 73.0,
+      "description": "RSI高于此值时触发卖出（开空），范围0-100"
+    },
+    "BUY_RATIO": {
+      "value": 0.1,
+      "description": "默认仓位比例（账户权益百分比），范围0-1"
+    },
+    "LEVERAGE": {
+      "value": 20.0,
+      "description": "交易杠杆倍数（如20表示20倍杠杆）"
+    },
+    "MARGIN_MODE": {
+      "value": "cross",
+      "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
+    },
+    "TAKE_PROFIT": {
+      "value": 10.0,
+      "description": "止盈百分比（如10表示10%盈利平仓）"
+    },
+    "STOP_LOSS": {
+      "value": 5.0,
+      "description": "止损百分比（如5表示5%亏损平仓）"
+    },
+    "ATR_PERIOD": {
+      "value": 7,
+      "description": "ATR计算周期，用于动态调整仓位"
+    },
+    "ATR_BASE": {
+      "value": 1000.0,
+      "description": "ATR基准值，用于计算动态仓位比例"
+    },
+    "BUY_RATIO_MIN": {
+      "value": 0.05,
+      "description": "最小仓位比例，范围0-1"
+    },
+    "BUY_RATIO_MAX": {
+      "value": 0.2,
+      "description": "最大仓位比例，范围0-1"
+    }
   },
+  
   "ETH-USDT-SWAP": {
-    "RSI_TIMEFRAME": "15m",
-    "MACD_TIMEFRAME": "1H",
-    "RSI_BUY_VALUE": 28.0,
-    "RSI_SELL_VALUE": 72.0,
-    "BUY_RATIO": 0.1,
-    "LEVERAGE": 20.0,
-    "MARGIN_MODE": "cross",
-    "TAKE_PROFIT": 8.0,
-    "STOP_LOSS": 4.0,
-    "ATR_PERIOD": 14,
-    "ATR_BASE": 1000.0,
-    "BUY_RATIO_MIN": 0.05,
-    "BUY_RATIO_MAX": 0.2
+    "RSI_TIMEFRAME": {
+      "value": "1H",
+      "description": "RSI指标的K线周期（如'15m'表示15分钟）"
+    },
+    "MACD_TIMEFRAME": {
+      "value": "15m",
+      "description": "MACD指标的K线周期（如'1H'表示1小时）"
+    },
+    "RSI_BUY_VALUE": {
+      "value": 18.0,
+      "description": "RSI低于此值时触发买入（开多），范围0-100"
+    },
+    "RSI_SELL_VALUE": {
+      "value": 79.0,
+      "description": "RSI高于此值时触发卖出（开空），范围0-100"
+    },
+    "BUY_RATIO": {
+      "value": 0.1,
+      "description": "默认仓位比例（账户权益百分比），范围0-1,0.1=10%"
+    },
+    "LEVERAGE": {
+      "value": 20.0,
+      "description": "交易杠杆倍数（如20表示20倍杠杆）"
+    },
+    "MARGIN_MODE": {
+      "value": "cross",
+      "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
+    },
+    "TAKE_PROFIT": {
+      "value": 15.0,
+      "description": "止盈百分比（如8表示8%盈利平仓）"
+    },
+    "STOP_LOSS": {
+      "value": 5.0,
+      "description": "止损百分比（如4表示4%亏损平仓）"
+    },
+    "ATR_PERIOD": {
+      "value": 7,
+      "description": "ATR计算周期，用于动态调整仓位"
+    },
+    "ATR_BASE": {
+      "value": 1000.0,
+      "description": "ATR基准值，用于计算动态仓位比例"
+    },
+    "BUY_RATIO_MIN": {
+      "value": 0.05,
+      "description": "最小仓位比例，范围0-1"
+    },
+    "BUY_RATIO_MAX": {
+      "value": 0.15,
+      "description": "最大仓位比例，范围0-1"
+    }
   },
+  
   "SOL-USDT-SWAP": {
-    "RSI_TIMEFRAME": "15m",
-    "MACD_TIMEFRAME": "1H",
-    "RSI_BUY_VALUE": 25.0,
-    "RSI_SELL_VALUE": 75.0,
-    "BUY_RATIO": 0.1,
-    "LEVERAGE": 20.0,
-    "MARGIN_MODE": "cross",
-    "TAKE_PROFIT": 12.0,
-    "STOP_LOSS": 6.0,
-    "ATR_PERIOD": 14,
-    "ATR_BASE": 1000.0,
-    "BUY_RATIO_MIN": 0.05,
-    "BUY_RATIO_MAX": 0.2
+    "RSI_TIMEFRAME": {
+      "value": "15m",
+      "description": "RSI指标的K线周期（如'15m'表示15分钟）"
+    },
+    "MACD_TIMEFRAME": {
+      "value": "1H",
+      "description": "MACD指标的K线周期（如'1H'表示1小时）"
+    },
+    "RSI_BUY_VALUE": {
+      "value": 25.0,
+      "description": "RSI低于此值时触发买入（开多），范围0-100"
+    },
+    "RSI_SELL_VALUE": {
+      "value": 75.0,
+      "description": "RSI高于此值时触发卖出（开空），范围0-100"
+    },
+    "BUY_RATIO": {
+      "value": 0.05,
+      "description": "默认仓位比例（账户权益百分比），范围0-1"
+    },
+    "LEVERAGE": {
+      "value": 20.0,
+      "description": "交易杠杆倍数（如20表示20倍杠杆）"
+    },
+    "MARGIN_MODE": {
+      "value": "cross",
+      "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
+    },
+    "TAKE_PROFIT": {
+      "value": 50.0,
+      "description": "止盈百分比（如12表示12%盈利平仓）"
+    },
+    "STOP_LOSS": {
+      "value": 10.0,
+      "description": "止损百分比（如6表示6%亏损平仓）"
+    },
+    "ATR_PERIOD": {
+      "value": 7,
+      "description": "ATR计算周期，用于动态调整仓位"
+    },
+    "ATR_BASE": {
+      "value": 1000.0,
+      "description": "ATR基准值，用于计算动态仓位比例"
+    },
+    "BUY_RATIO_MIN": {
+      "value": 0.05,
+      "description": "最小仓位比例，范围0-1"
+    },
+    "BUY_RATIO_MAX": {
+      "value": 0.1,
+      "description": "最大仓位比例，范围0-1"
+    }
   }
 }
