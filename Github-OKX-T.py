@@ -1,0 +1,583 @@
+import logging
+from logging.handlers import RotatingFileHandler
+import os
+import json
+import time
+import pandas as pd
+import numpy as np
+import okx.Trade as Trade
+import okx.MarketData as MarketData
+import okx.Account as Account
+import okx.PublicData as PublicData
+import traceback
+
+# 设置日志
+logging.basicConfig(
+    handlers=[RotatingFileHandler('trading_bot.log', maxBytes=5*1024*1024, backupCount=3, encoding='utf-8')],
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+# 配置文件
+CONFIG_FILE = 'okx_config.json'
+PARAMS_FILE = 'trading_params.json'
+
+# 全局变量
+trade_client = None
+market_client = None
+account_client = None
+public_client = None
+symbols = ['BTC-USDT-SWAP', 'ETH-USDT-SWAP', 'SOL-USDT-SWAP']
+state = {symbol: {'current_price': 0.0, 'latest_rsi': None, 'latest_macd': None, 'latest_signal': None, 'latest_histogram': None} for symbol in symbols}
+SYMBOL_PARAMS = {}  # 动态加载的参数
+
+
+def load_params():
+    """加载交易参数"""
+    global SYMBOL_PARAMS
+    if not os.path.exists(PARAMS_FILE):
+        logging.error(f"交易参数文件 {PARAMS_FILE} 不存在")
+        raise FileNotFoundError(f"交易参数文件 {PARAMS_FILE} 不存在")
+
+    try:
+        with open(PARAMS_FILE, 'r', encoding='utf-8') as f:
+            content = f.read().strip()
+            if not content:
+                raise ValueError("交易参数文件为空")
+            raw_params = json.loads(content)
+
+        # 转换为实际参数格式，忽略description字段
+        SYMBOL_PARAMS = {}
+        required_keys = [
+            'RSI_TIMEFRAME', 'MACD_TIMEFRAME', 'RSI_BUY_VALUE', 'RSI_SELL_VALUE',
+            'BUY_RATIO', 'LEVERAGE', 'MARGIN_MODE', 'TAKE_PROFIT', 'STOP_LOSS',
+            'ATR_PERIOD', 'ATR_BASE', 'BUY_RATIO_MIN', 'BUY_RATIO_MAX'
+        ]
+
+        for symbol in symbols:
+            if symbol not in raw_params:
+                raise ValueError(f"缺少 {symbol} 的参数配置")
+            SYMBOL_PARAMS[symbol] = {}
+            for key in required_keys:
+                if key not in raw_params[symbol]:
+                    raise ValueError(f"{symbol} 缺少参数 {key}")
+                if 'value' not in raw_params[symbol][key]:
+                    raise ValueError(f"{symbol} 的 {key} 缺少 'value' 字段")
+                SYMBOL_PARAMS[symbol][key] = raw_params[symbol][key]['value']
+
+            # 验证参数类型
+            for key in ['RSI_BUY_VALUE', 'RSI_SELL_VALUE', 'BUY_RATIO', 'LEVERAGE', 'TAKE_PROFIT', 'STOP_LOSS',
+                        'ATR_BASE', 'BUY_RATIO_MIN', 'BUY_RATIO_MAX']:
+                if not isinstance(SYMBOL_PARAMS[symbol][key], (int, float)):
+                    raise ValueError(f"{symbol} 的 {key} 必须是数值类型")
+            if not isinstance(SYMBOL_PARAMS[symbol]['ATR_PERIOD'], int):
+                raise ValueError(f"{symbol} 的 ATR_PERIOD 必须是整数")
+            if SYMBOL_PARAMS[symbol]['MARGIN_MODE'] not in ['cross', 'isolated']:
+                raise ValueError(f"{symbol} 的 MARGIN_MODE 必须是 'cross' 或 'isolated'")
+
+        logging.info("交易参数加载成功")
+        for symbol in symbols:
+            logging.info(f"{symbol} 参数: {SYMBOL_PARAMS[symbol]}")
+        return True
+    except Exception as e:
+        logging.error(f"加载交易参数失败: {str(e)}")
+        raise ValueError(f"加载交易参数失败: {str(e)}")
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                if content:
+                    return json.loads(content)
+        except Exception as e:
+            logging.error(f"加载配置文件失败: {str(e)}")
+    return {}
+
+def save_config(api_key, api_secret, passphrase):
+    config = {'api_key': api_key, 'api_secret': api_secret, 'passphrase': passphrase}
+    try:
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=4)
+        logging.info("配置文件已保存")
+    except Exception as e:
+        logging.error(f"保存配置文件失败: {str(e)}")
+
+def init_okx(api_key, api_secret, passphrase, flag='0'):
+    global trade_client, market_client, account_client, public_client
+    try:
+        trade_client = Trade.TradeAPI(api_key, api_secret, passphrase, use_server_time=False, flag=flag)
+        market_client = MarketData.MarketAPI(flag=flag)
+        account_client = Account.AccountAPI(api_key, api_secret, passphrase, use_server_time=False, flag=flag)
+        public_client = PublicData.PublicAPI(flag=flag)
+        response = account_client.get_account_balance()
+        if response.get('code') != '0':
+            raise Exception(f"账户余额检查失败: {response.get('msg', '未知错误')}")
+        logging.info(f"OKX API 初始化成功，flag={flag}")
+        return True
+    except Exception as e:
+        logging.error(f"OKX API 初始化失败: {str(e)}\n{traceback.format_exc()}")
+        return False
+
+def set_leverage(symbol):
+    params = SYMBOL_PARAMS[symbol]
+    try:
+        response = account_client.set_leverage(instId=symbol, lever=str(params['LEVERAGE']), mgnMode=params['MARGIN_MODE'])
+        if response.get('code') == '0':
+            logging.info(f"设置杠杆成功: {symbol}, 杠杆={params['LEVERAGE']}, 模式={params['MARGIN_MODE']}")
+            return True
+        else:
+            raise Exception(f"设置杠杆失败: {response.get('msg', '未知错误')}")
+    except Exception as e:
+        logging.error(f"设置杠杆失败: {symbol}, {str(e)}")
+        return False
+
+def get_price(symbol):
+    for attempt in range(3):
+        try:
+            ticker = market_client.get_ticker(instId=symbol)
+            if ticker.get('code') != '0':
+                raise Exception(f"获取行情失败: {ticker.get('msg', '未知错误')}")
+            price = float(ticker['data'][0]['last'])
+            state[symbol]['current_price'] = price
+            return price
+        except Exception as e:
+            logging.error(f"获取价格失败: {symbol} (尝试 {attempt + 1}/3): {str(e)}")
+            time.sleep(2)
+    logging.error(f"获取价格失败: {symbol}, 重试次数耗尽")
+    return None
+
+def get_klines(symbol, interval, limit=100):
+    for attempt in range(5):
+        try:
+            klines = market_client.get_candlesticks(instId=symbol, bar=interval, limit=str(limit))
+            if not klines.get('data'):
+                logging.warning(f"无K线数据: {symbol}, {interval}")
+                return None
+            df = pd.DataFrame(klines['data'], columns=['ts', 'open', 'high', 'low', 'close', 'vol', 'volCcy', 'volCcyQuote', 'confirm'])
+            df['ts'] = pd.to_datetime(df['ts'].astype(float), unit='ms')
+            df[['open', 'high', 'low', 'close']] = df[['open', 'high', 'low', 'close']].astype(float)
+            df = df.sort_values('ts').reset_index(drop=True)
+            if df.empty:
+                logging.warning(f"无有效K线数据: {symbol}, {interval}")
+                return None
+            df = df.dropna(subset=['close'])
+            df = df[df['close'] > 0]
+            if len(df) < 34:
+                logging.warning(f"有效K线数据不足: {symbol}, {len(df)} 条，需至少 34 条")
+                return None
+            timeframe_map = {
+                '1m': pd.Timedelta(minutes=1), '5m': pd.Timedelta(minutes=5), '15m': pd.Timedelta(minutes=15),
+                '30m': pd.Timedelta(minutes=30), '1H': pd.Timedelta(hours=1), '4H': pd.Timedelta(hours=4),
+                '1D': pd.Timedelta(days=1)
+            }
+            expected_diff = timeframe_map.get(interval)
+            if expected_diff is None:
+                logging.error(f"不支持的K线周期: {interval}")
+                return None
+            if len(df) > 1 and not df['ts'].diff().iloc[1:].eq(expected_diff).all():
+                logging.warning(f"K线时间戳不连续: {symbol}, 预期时间差 {expected_diff}, 周期 {interval}")
+                return None
+            logging.info(f"K线数据统计: {symbol}, 长度={len(df)}, 收盘价最小={df['close'].min():.2f}, 最大={df['close'].max():.2f}, NaN={df['close'].isna().sum()}")
+            logging.info(f"获取K线数据: {symbol}, {len(df)} 条, 最新时间: {df['ts'].iloc[-1]}")
+            return df
+        except Exception as e:
+            logging.error(f"获取K线错误: {symbol} (尝试 {attempt + 1}/5): {str(e)}\n{traceback.format_exc()}")
+            time.sleep(2)
+    logging.error(f"获取K线失败: {symbol}, 重试次数耗尽")
+    return None
+
+def calculate_rsi(df, period=14):
+    try:
+        if len(df) < period + 1:
+            logging.warning(f"RSI 数据不足: {len(df)} 条")
+            return None
+        close = df['close'].values
+        delta = np.diff(close)
+        gains = np.where(delta > 0, delta, 0)
+        losses = np.where(delta < 0, -delta, 0)
+        avg_gain = np.mean(gains[:period])
+        avg_loss = np.mean(losses[:period])
+        if avg_loss == 0:
+            rs = np.inf
+        else:
+            rs = avg_gain / avg_loss
+        rsi = np.zeros(len(close))
+        rsi[:period] = np.nan
+        rsi[period] = 100 - (100 / (1 + rs))
+        for i in range(period + 1, len(close)):
+            avg_gain = (avg_gain * (period - 1) + gains[i - 1]) / period
+            avg_loss = (avg_loss * (period - 1) + losses[i - 1]) / period
+            if avg_loss == 0:
+                rs = np.inf
+            else:
+                rs = avg_gain / avg_loss
+            rsi[i] = 100 - (100 / (1 + rs))
+        if np.isnan(rsi[-1]):
+            logging.warning("RSI 计算结果无效")
+            return None
+        logging.info(f"RSI 计算: 周期={period}, 最新RSI={rsi[-1]:.2f}")
+        return pd.Series(rsi, index=df.index)
+    except Exception as e:
+        logging.error(f"RSI 计算错误: {str(e)}\n{traceback.format_exc()}")
+        return None
+
+def calculate_macd(df, fast=12, slow=26, signal=9):
+    try:
+        if len(df) < slow + signal - 1:
+            logging.warning(f"MACD 数据不足: {len(df)} 条，需至少 {slow + signal - 1} 条")
+            return None, None, None
+        close = df['close'].values
+        if np.any(np.isnan(close)) or np.any(close <= 0):
+            logging.warning("K线数据包含无效收盘价（NaN 或 <= 0）")
+            return None, None, None
+        ema_fast = pd.Series(close).ewm(span=fast, adjust=False).mean().values
+        ema_slow = pd.Series(close).ewm(span=slow, adjust=False).mean().values
+        macd = ema_fast - ema_slow
+        signal_line = pd.Series(macd).ewm(span=signal, adjust=False).mean().values
+        histogram = macd - signal_line
+        macd_series = pd.Series(macd, index=df.index)
+        signal_series = pd.Series(signal_line, index=df.index)
+        histogram_series = pd.Series(histogram, index=df.index)
+        if len(macd_series) < 2 or len(signal_series) < 2:
+            logging.warning(f"MACD 输出长度不足: macd={len(macd_series)}, signal={len(signal_series)}")
+            return None, None, None
+        logging.info(f"MACD 计算: MACD={macd[-1]:.2f}, 信号线={signal_line[-1]:.2f}, 柱状图={histogram[-1]:.2f}, 数据长度={len(macd_series)}")
+        return macd_series, signal_series, histogram_series
+    except Exception as e:
+        logging.error(f"MACD 计算错误: {str(e)}\n{traceback.format_exc()}")
+        return None, None, None
+
+def calculate_atr(df, period=7):
+    try:
+        if len(df) < period + 1:
+            logging.warning(f"ATR 数据不足: {len(df)} 条，需至少 {period + 1} 条")
+            return None
+        high_low = df['high'] - df['low']
+        high_close = (df['high'] - df['close'].shift()).abs()
+        low_close = (df['low'] - df['close'].shift()).abs()
+        tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+        atr = tr.rolling(window=period).mean()
+        if atr.iloc[-1] is None or np.isnan(atr.iloc[-1]):
+            logging.warning("ATR 计算结果无效")
+            return None
+        logging.info(f"ATR 计算: 周期={period}, 最新ATR={atr.iloc[-1]:.2f}")
+        return atr.iloc[-1]
+    except Exception as e:
+        logging.error(f"ATR 计算错误: {str(e)}\n{traceback.format_exc()}")
+        return None
+
+def get_symbol_info(symbol):
+    try:
+        info = public_client.get_instruments(instType='SWAP', instId=symbol)
+        if info.get('code') != '0':
+            raise Exception(f"获取交易对信息失败: {info.get('msg', '未知错误')}")
+        ct_val = float(info['data'][0]['ctVal'])
+        min_qty = float(info['data'][0]['minSz'])
+        tick_sz = float(info['data'][0]['tickSz'])
+        return ct_val, min_qty, tick_sz
+    except Exception as e:
+        logging.error(f"获取交易对信息失败: {symbol}, {str(e)}")
+        return 0.0001, 1, 0.01
+
+def place_order(symbol, side, pos_side, quantity):
+    params = SYMBOL_PARAMS[symbol]
+    try:
+        ct_val, min_qty, tick_sz = get_symbol_info(symbol)
+        quantity = max(round(quantity / ct_val), 1)
+        if quantity < min_qty:
+            logging.warning(f"下单失败: {symbol}, 数量 {quantity} 张小于最小值 {min_qty} 张")
+            return None
+        set_leverage(symbol)
+        current_price = state[symbol]['current_price']
+        tp_price = round(current_price * (1 + params['TAKE_PROFIT'] / 100 if pos_side == 'long' else 1 - params['TAKE_PROFIT'] / 100), -int(np.log10(tick_sz)))
+        sl_price = round(current_price * (1 - params['STOP_LOSS'] / 100 if pos_side == 'long' else 1 + params['STOP_LOSS'] / 100), -int(np.log10(tick_sz)))
+        algo_order = {
+            'tpTriggerPx': str(tp_price),
+            'tpOrdPx': '-1',
+            'slTriggerPx': str(sl_price),
+            'slOrdPx': '-1',
+            'tpOrdKind': 'condition',
+            'slTriggerPxType': 'last',
+            'tpTriggerPxType': 'last'
+        }
+        order_params = {
+            'instId': symbol,
+            'tdMode': params['MARGIN_MODE'],
+            'side': side.lower(),
+            'posSide': pos_side.lower(),
+            'ordType': 'market',
+            'sz': str(quantity),
+            'clOrdId': f"order_{symbol}_{int(time.time())}",
+            'attachAlgoOrds': [algo_order]
+        }
+        order = trade_client.place_order(**order_params)
+        if order['code'] == '0':
+            action = '开多' if side == 'buy' and pos_side == 'long' else '开空' if side == 'sell' and pos_side == 'short' else '平仓'
+            logging.info(f"{symbol} {action} 订单已下: 数量 {quantity} 张, 止盈 {params['TAKE_PROFIT']}%, 止损 {params['STOP_LOSS']}%")
+            return order['data'][0]['ordId']
+        else:
+            logging.error(f"下单失败: {symbol}, {order['msg']}")
+            return None
+    except Exception as e:
+        logging.error(f"下单失败: {symbol}, {str(e)}\n{traceback.format_exc()}")
+        return None
+
+def get_balance(symbol):
+    for attempt in range(3):
+        try:
+            balance = account_client.get_account_balance()
+            if balance.get('code') != '0':
+                raise Exception(f"获取余额失败: {balance.get('msg', '未知错误')}")
+            usdt = float(next((asset for asset in balance['data'][0]['details'] if asset['ccy'] == 'USDT'), {'availEq': '0'})['availEq'])
+            total_equity = float(balance['data'][0]['totalEq'])
+            positions = account_client.get_positions(instType='SWAP', instId=symbol)
+            long_qty = 0
+            short_qty = 0
+            long_avg_price = 0.0
+            short_avg_price = 0.0
+            if positions.get('code') == '0' and positions.get('data'):
+                for pos in positions['data']:
+                    if pos['instId'] == symbol:
+                        qty = float(pos['pos'])
+                        avg_price = float(pos['avgPx']) if pos['avgPx'] else 0.0
+                        if pos['posSide'] == 'long':
+                            long_qty = qty
+                            long_avg_price = avg_price
+                        elif pos['posSide'] == 'short':
+                            short_qty = qty
+                            short_avg_price = avg_price
+            return usdt, long_qty, short_qty, long_avg_price, short_avg_price, total_equity
+        except Exception as e:
+            logging.error(f"获取余额失败: {symbol} (尝试 {attempt + 1}/3): {str(e)}")
+            time.sleep(2)
+    logging.error(f"获取余额失败: {symbol}, 重试次数耗尽")
+    return None, None, None, None, None, None
+
+def check_take_profit_stop_loss(symbol, long_qty, short_qty, long_avg_price, short_avg_price, current_price, rsi, macd, signal):
+    params = SYMBOL_PARAMS[symbol]
+    try:
+        pos_side = None
+        qty = 0
+        reason = None
+        if long_qty > 0 and long_avg_price > 0:
+            profit_percentage = (current_price - long_avg_price) / long_avg_price * 100
+            if profit_percentage >= params['TAKE_PROFIT']:
+                pos_side = 'long'
+                qty = long_qty
+                reason = '止盈'
+            elif profit_percentage <= -params['STOP_LOSS']:
+                pos_side = 'long'
+                qty = long_qty
+                reason = '止损'
+            elif rsi is not None and rsi >= params['RSI_SELL_VALUE']:
+                pos_side = 'long'
+                qty = long_qty
+                reason = f"RSI 高于{params['RSI_SELL_VALUE']}"
+            elif macd is not None and signal is not None and len(macd) >= 2 and len(signal) >= 2 and macd.iloc[-1] > 0 and macd.iloc[-1] < signal.iloc[-1] and macd.iloc[-2] >= signal.iloc[-2]:
+                pos_side = 'long'
+                qty = long_qty
+                reason = 'MACD 死叉'
+        if short_qty > 0 and short_avg_price > 0:
+            profit_percentage = (short_avg_price - current_price) / short_avg_price * 100
+            if profit_percentage >= params['TAKE_PROFIT']:
+                pos_side = 'short'
+                qty = short_qty
+                reason = '止盈'
+            elif profit_percentage <= -params['STOP_LOSS']:
+                pos_side = 'short'
+                qty = short_qty
+                reason = '止损'
+            elif rsi is not None and rsi <= params['RSI_BUY_VALUE']:
+                pos_side = 'short'
+                qty = short_qty
+                reason = f"RSI 低于{params['RSI_BUY_VALUE']}"
+            elif macd is not None and signal is not None and len(macd) >= 2 and len(signal) >= 2 and macd.iloc[-1] < 0 and macd.iloc[-1] > signal.iloc[-1] and macd.iloc[-2] <= signal.iloc[-2]:
+                pos_side = 'short'
+                qty = short_qty
+                reason = 'MACD 金叉'
+        return pos_side, qty, reason
+    except Exception as e:
+        logging.error(f"检查止盈止损错误: {symbol}, {str(e)}\n{traceback.format_exc()}")
+        return None, 0, None
+
+def execute_trading_logic(symbol):
+    """执行数据获取、计算和交易逻辑"""
+    params = SYMBOL_PARAMS[symbol]
+    try:
+        # 获取RSI的K线数据
+        df_rsi = get_klines(symbol, params['RSI_TIMEFRAME'])
+        if df_rsi is None:
+            logging.warning(f"{symbol} 无RSI K线数据，跳过交易")
+            return False
+
+        # 获取MACD的K线数据
+        df_macd = get_klines(symbol, params['MACD_TIMEFRAME'])
+        if df_macd is None:
+            logging.warning(f"{symbol} 无MACD K线数据，跳过交易")
+            return False
+
+        # 计算RSI
+        rsi = calculate_rsi(df_rsi)
+        if rsi is None:
+            logging.warning(f"{symbol} RSI计算失败，跳过交易")
+            return False
+        state[symbol]['latest_rsi'] = rsi.iloc[-1]
+
+        # 计算MACD
+        macd, signal, histogram = calculate_macd(df_macd)
+        if macd is None or signal is None or histogram is None:
+            logging.warning(f"{symbol} MACD计算失败，跳过交易")
+            return False
+        state[symbol]['latest_macd'] = macd.iloc[-1]
+        state[symbol]['latest_signal'] = signal.iloc[-1]
+        state[symbol]['latest_histogram'] = histogram.iloc[-1]
+
+        # 计算ATR
+        atr = calculate_atr(df_rsi, period=params['ATR_PERIOD'])
+        if atr is None:
+            logging.warning(f"{symbol} ATR计算失败，使用默认仓位比例")
+            dynamic_buy_ratio = params['BUY_RATIO']
+        else:
+            volatility_factor = min(1.0, params['ATR_BASE'] / atr)
+            dynamic_buy_ratio = params['BUY_RATIO'] * volatility_factor
+            dynamic_buy_ratio = max(params['BUY_RATIO_MIN'], min(params['BUY_RATIO_MAX'], dynamic_buy_ratio))
+            logging.info(f"{symbol} 动态仓位比例: ATR={atr:.2f}, volatility_factor={volatility_factor:.2f}, dynamic_buy_ratio={dynamic_buy_ratio:.2f}")
+
+        # 获取账户余额和持仓
+        usdt_balance, long_qty, short_qty, long_avg_price, short_avg_price, total_equity = get_balance(symbol)
+        if usdt_balance is None:
+            logging.warning(f"{symbol} 获取余额失败，跳过交易")
+            return False
+        if usdt_balance < 10:
+            logging.warning(f"{symbol} USDT余额不足: {usdt_balance:.2f}，跳过交易")
+            return False
+
+        # 获取当前价格
+        price = get_price(symbol)
+        if price:
+            state[symbol]['current_price'] = price
+            logging.info(f"{symbol} 当前价格: ${price:.2f}")
+        else:
+            logging.warning(f"{symbol} 无法获取价格，跳过交易")
+            return False
+
+        logging.info(f"{symbol} 账户状态: USDT余额={usdt_balance:.2f}, 总权益={total_equity:.2f}, 多仓={long_qty:.0f}, 空仓={short_qty:.0f}")
+
+        # 检查止盈止损或反向信号
+        pos_side, qty, reason = check_take_profit_stop_loss(symbol, long_qty, short_qty, long_avg_price, short_avg_price, state[symbol]['current_price'], state[symbol]['latest_rsi'], macd, signal)
+        if pos_side and qty > 0:
+            order = place_order(symbol, 'sell' if pos_side == 'long' else 'buy', pos_side, qty)
+            if order:
+                logging.info(f"{symbol} 平仓: {reason}, 数量 {qty:.0f} 张")
+                usdt_balance, long_qty, short_qty, long_avg_price, short_avg_price, total_equity = get_balance(symbol)
+                if usdt_balance is None:
+                    logging.warning(f"{symbol} 平仓后获取余额失败，跳过开仓")
+                    return True
+
+        # 仅当无仓位时开仓
+        if long_qty == 0 and short_qty == 0:
+            max_quantity = (total_equity * dynamic_buy_ratio) / state[symbol]['current_price'] * params['LEVERAGE']
+            if state[symbol]['latest_rsi'] <= params['RSI_BUY_VALUE']:
+                quantity = min((usdt_balance * dynamic_buy_ratio) / state[symbol]['current_price'] * params['LEVERAGE'], max_quantity)
+                if quantity > 0:
+                    order = place_order(symbol, 'buy', 'long', quantity)
+                    if order:
+                        logging.info(f"{symbol} RSI 开多: 数量 {quantity:.0f} 张")
+                    else:
+                        logging.info(f"{symbol} RSI 未开多: 余额不足或数量过小")
+                    return True
+                else:
+                    logging.info(f"{symbol} RSI 未开多: RSI={state[symbol]['latest_rsi']:.2f} 未达买入阈值 {params['RSI_BUY_VALUE']}")
+            elif state[symbol]['latest_rsi'] >= params['RSI_SELL_VALUE']:
+                quantity = min((usdt_balance * dynamic_buy_ratio) / state[symbol]['current_price'] * params['LEVERAGE'], max_quantity)
+                if quantity > 0:
+                    order = place_order(symbol, 'sell', 'short', quantity)
+                    if order:
+                        logging.info(f"{symbol} RSI 开空: 数量 {quantity:.0f} 张")
+                    else:
+                        logging.info(f"{symbol} RSI 未开空: 余额不足或数量过小")
+                    return True
+                else:
+                    logging.info(f"{symbol} RSI 未开空: RSI={state[symbol]['latest_rsi']:.2f} 未达卖出阈值 {params['RSI_SELL_VALUE']}")
+            elif len(macd) >= 2 and len(signal) >= 2:
+                if state[symbol]['latest_macd'] < 0 and state[symbol]['latest_macd'] > state[symbol]['latest_signal'] and macd.iloc[-2] <= signal.iloc[-2] and state[symbol]['latest_histogram'] > 0:
+                    logging.info(f"{symbol} MACD 检测到负区金叉")
+                    quantity = min((usdt_balance * dynamic_buy_ratio) / state[symbol]['current_price'] * params['LEVERAGE'], max_quantity)
+                    if quantity > 0:
+                        order = place_order(symbol, 'buy', 'long', quantity)
+                        if order:
+                            logging.info(f"{symbol} MACD 开多: 数量 {quantity:.0f} 张")
+                        else:
+                            logging.info(f"{symbol} MACD 未开多: 余额不足或数量过小")
+                        return True
+                elif state[symbol]['latest_macd'] > 0 and state[symbol]['latest_macd'] < state[symbol]['latest_signal'] and macd.iloc[-2] >= signal.iloc[-2] and state[symbol]['latest_histogram'] < 0:
+                    logging.info(f"{symbol} MACD 检测到正区死叉")
+                    quantity = min((usdt_balance * dynamic_buy_ratio) / state[symbol]['current_price'] * params['LEVERAGE'], max_quantity)
+                    if quantity > 0:
+                        order = place_order(symbol, 'sell', 'short', quantity)
+                        if order:
+                            logging.info(f"{symbol} MACD 开空: 数量 {quantity:.0f} 张")
+                        else:
+                            logging.info(f"{symbol} MACD 未开空: 余额不足或数量过小")
+                        return True
+                else:
+                    logging.info(f"{symbol} MACD 未形成金叉或死叉")
+            else:
+                logging.warning(f"{symbol} MACD 数据长度不足: macd={len(macd)}, signal={len(signal)}")
+                return False
+        else:
+            logging.info(f"{symbol} 未开新仓: 当前持仓 多仓={long_qty:.0f}, 空仓={short_qty:.0f}")
+        return True
+    except Exception as e:
+        logging.error(f"{symbol} 交易逻辑错误: {str(e)}\n{traceback.format_exc()}")
+        return False
+
+def trading_cycle():
+    try:
+        logging.info("开始交易周期")
+        for symbol in symbols:
+            logging.info(f"处理交易对: {symbol}")
+            if execute_trading_logic(symbol):
+                continue
+            logging.info(f"{symbol} 首次交易逻辑失败，尝试重新执行")
+            if execute_trading_logic(symbol):
+                continue
+            logging.warning(f"{symbol} 第二次交易逻辑失败，跳过本次交易")
+    except Exception as e:
+        logging.error(f"交易周期错误: {str(e)}\n{traceback.format_exc()}")
+
+def main():
+    try:
+        # 加载交易参数
+        load_params()
+
+        # 加载API配置
+        config = load_config()
+        api_key = config.get('api_key') or os.getenv('OKX_API_KEY')
+        api_secret = config.get('api_secret') or os.getenv('OKX_API_SECRET')
+        passphrase = config.get('passphrase') or os.getenv('OKX_PASSPHRASE')
+        if not all([api_key, api_secret, passphrase]):
+            logging.error("API 密钥未配置")
+            raise ValueError("API 密钥未配置")
+
+        # 初始化OKX API
+        if init_okx(api_key, api_secret, passphrase, flag='0'):
+            save_config(api_key, api_secret, passphrase)
+        else:
+            logging.error("API 初始化失败")
+            raise Exception("API 初始化失败")
+
+        # 为每个交易对设置杠杆
+        for symbol in symbols:
+            set_leverage(symbol)
+
+        # 执行交易循环
+        trading_cycle()
+        logging.info("交易周期完成，程序退出")
+    except Exception as e:
+        logging.error(f"主程序错误: {str(e)}\n{traceback.format_exc()}")
+        raise
+
+if __name__ == "__main__":
+    main()
