@@ -107,7 +107,7 @@ def get_btc_price():
     return None
 
 def get_klines(symbol, interval, limit=100):
-    for attempt in range(3):
+    for attempt in range(5):
         try:
             klines = market_client.get_candlesticks(instId=symbol, bar=interval, limit=str(limit))
             if not klines.get('data'):
