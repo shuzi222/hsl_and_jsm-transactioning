@@ -2,7 +2,7 @@ name:  OKX HY-Trading Bot
 
 on:
   schedule:
-    - cron: '*/10 * * * *'  # 每小时整点运行
+    - cron: '0,10,20,30,40,50 * * * *'  # 10分钟排队不靠谱
   workflow_dispatch:  # 支持手动触发
 
 jobs:
