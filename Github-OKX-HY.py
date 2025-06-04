@@ -33,7 +33,7 @@ latest_signal = None
 latest_histogram = None
 
 # 固定交易参数
-TIMEFRAME = '1H'  # 1小时周期
+TIMEFRAME = '15m'  # 15分钟周期
 RSI_BUY_VALUE = 26.0  # RSI 低于26开多
 RSI_SELL_VALUE = 73.0  # RSI 高于73开空
 BUY_RATIO = 0.1  # 每次开仓使用20% USDT
