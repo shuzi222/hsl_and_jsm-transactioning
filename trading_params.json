@@ -1,0 +1,47 @@
+{
+  "BTC-USDT-SWAP": {
+    "RSI_TIMEFRAME": "15m",
+    "MACD_TIMEFRAME": "1H",
+    "RSI_BUY_VALUE": 26.0,
+    "RSI_SELL_VALUE": 73.0,
+    "BUY_RATIO": 0.1,
+    "LEVERAGE": 20.0,
+    "MARGIN_MODE": "cross",
+    "TAKE_PROFIT": 10.0,
+    "STOP_LOSS": 5.0,
+    "ATR_PERIOD": 14,
+    "ATR_BASE": 1000.0,
+    "BUY_RATIO_MIN": 0.05,
+    "BUY_RATIO_MAX": 0.2
+  },
+  "ETH-USDT-SWAP": {
+    "RSI_TIMEFRAME": "15m",
+    "MACD_TIMEFRAME": "1H",
+    "RSI_BUY_VALUE": 28.0,
+    "RSI_SELL_VALUE": 72.0,
+    "BUY_RATIO": 0.1,
+    "LEVERAGE": 20.0,
+    "MARGIN_MODE": "cross",
+    "TAKE_PROFIT": 8.0,
+    "STOP_LOSS": 4.0,
+    "ATR_PERIOD": 14,
+    "ATR_BASE": 1000.0,
+    "BUY_RATIO_MIN": 0.05,
+    "BUY_RATIO_MAX": 0.2
+  },
+  "SOL-USDT-SWAP": {
+    "RSI_TIMEFRAME": "15m",
+    "MACD_TIMEFRAME": "1H",
+    "RSI_BUY_VALUE": 25.0,
+    "RSI_SELL_VALUE": 75.0,
+    "BUY_RATIO": 0.1,
+    "LEVERAGE": 20.0,
+    "MARGIN_MODE": "cross",
+    "TAKE_PROFIT": 12.0,
+    "STOP_LOSS": 6.0,
+    "ATR_PERIOD": 14,
+    "ATR_BASE": 1000.0,
+    "BUY_RATIO_MIN": 0.05,
+    "BUY_RATIO_MAX": 0.2
+  }
+}
