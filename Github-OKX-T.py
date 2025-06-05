@@ -286,11 +286,8 @@ def place_order(symbol, side, pos_side, quantity):
     params = SYMBOL_PARAMS[symbol]
     try:
         ct_val, min_qty, tick_sz = get_symbol_info(symbol)
-        # 将币本位数量转换为张，保留两位小数（0.01张的倍数）
         quantity_in_contracts = quantity / ct_val
-        # 确保数量为0.01的倍数
         quantity_in_contracts = round(quantity_in_contracts / 0.01) * 0.01
-        # 确保数量不小于最小下单单位
         quantity_in_contracts = max(quantity_in_contracts, min_qty)
         if quantity_in_contracts < min_qty:
             logging.warning(f"下单失败: {symbol}, 数量 {quantity_in_contracts:.2f} 张小于最小值 {min_qty:.2f} 张")
@@ -314,17 +311,18 @@ def place_order(symbol, side, pos_side, quantity):
             'side': side.lower(),
             'posSide': pos_side.lower(),
             'ordType': 'market',
-            'sz': str(round(quantity_in_contracts, 2)),  # 下单数量，保留两位小数
+            'sz': str(round(quantity_in_contracts, 2)),
             'clOrdId': f"order_{symbol}_{int(time.time())}",
             'attachAlgoOrds': [algo_order]
         }
+        logging.info(f"{symbol} 准备下单: 方向={side}, 持仓方向={pos_side}, 数量={quantity_in_contracts:.2f} 张 (约 {quantity_in_contracts * ct_val:.6f} {symbol.split('-')[0]})")
         order = trade_client.place_order(**order_params)
         if order['code'] == '0':
             action = '开多' if side == 'buy' and pos_side == 'long' else '开空' if side == 'sell' and pos_side == 'short' else '平仓'
             logging.info(f"{symbol} {action} 订单已下: 数量 {quantity_in_contracts:.2f} 张 (约 {quantity_in_contracts * ct_val:.6f} {symbol.split('-')[0]}), 止盈 {params['TAKE_PROFIT']}%, 止损 {params['STOP_LOSS']}%")
             return order['data'][0]['ordId']
         else:
-            logging.error(f"下单失败: {symbol}, {order['msg']}")
+            logging.error(f"下单失败: {symbol}, 错误码={order['code']}, 错误信息={order['msg']}, 详情={order.get('data', '无详细信息')}")
             return None
     except Exception as e:
         logging.error(f"下单失败: {symbol}, {str(e)}\n{traceback.format_exc()}")
