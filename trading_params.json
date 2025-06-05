@@ -194,7 +194,7 @@
       "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
     },
     "TAKE_PROFIT": {
-      "value": 2.0,
+      "value": 1.2,
       "description": "止盈百分比(注意这个是实际价格的百分比不是仓位盈利止盈（如10表示大饼价格涨10%平仓）"
     },
     "STOP_LOSS": {
@@ -206,7 +206,7 @@
       "description": "ATR计算周期，用于动态调整仓位"
     },
     "ATR_BASE": {
-      "value": 0.03,
+      "value": 0.02,
       "description": "ATR基准值，用于计算动态仓位比例"
     },
     "BUY_RATIO_MIN": {
