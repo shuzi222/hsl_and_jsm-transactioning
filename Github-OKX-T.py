@@ -447,10 +447,11 @@ def execute_trading_logic(symbol):
             logging.warning(f"{symbol} ATR计算失败，使用默认仓位比例")
             dynamic_buy_ratio = params['BUY_RATIO']
         else:
-            volatility_factor = min(1.0, params['ATR_BASE'] / atr)
+            volatility_factor = min(1.5, atr / params['ATR_BASE'])  # 高波动时放大，最多1.5倍
+            volatility_factor = max(0.5, volatility_factor)  # 低波动时缩小，最小0.5倍
             dynamic_buy_ratio = params['BUY_RATIO'] * volatility_factor
             dynamic_buy_ratio = max(params['BUY_RATIO_MIN'], min(params['BUY_RATIO_MAX'], dynamic_buy_ratio))
-            logging.info(f"{symbol} 动态仓位比例: ATR={atr:.2f}, volatility_factor={volatility_factor:.2f}, dynamic_buy_ratio={dynamic_buy_ratio:.2f}")
+            logging.info(f"{symbol} 动态仓位比例: ATR={atr:.2f}, 基准ATR={params['ATR_BASE']:.2f}, volatility_factor={volatility_factor:.2f}, dynamic_buy_ratio={dynamic_buy_ratio:.2f}")
 
         # 获取账户余额和持仓
         usdt_balance, long_qty, short_qty, long_avg_price, short_avg_price, total_equity = get_balance(symbol)
