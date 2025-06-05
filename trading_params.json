@@ -41,7 +41,7 @@
       "description": "ATR计算周期，用于动态调整仓位"
     },
     "ATR_BASE": {
-      "value": 500.0,
+      "value": 300.0,
       "description": "ATR基准值，用于计算动态仓位比例"
     },
     "BUY_RATIO_MIN": {
@@ -96,7 +96,7 @@
       "description": "ATR计算周期，用于动态调整仓位"
     },
     "ATR_BASE": {
-      "value": 25.0,
+      "value": 28.0,
       "description": "ATR基准值，用于计算动态仓位比例"
     },
     "BUY_RATIO_MIN": {
