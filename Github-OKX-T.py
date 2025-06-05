@@ -305,6 +305,9 @@ def place_order(symbol, side, pos_side, quantity):
             'slTriggerPxType': 'last',
             'tpTriggerPxType': 'last'
         }
+        # 生成符合要求的 clOrdId（字母数字，1-32 位）
+        import uuid
+        cl_ord_id = f"order{symbol.replace('-', '')}{int(time.time())}"[:32]
         order_params = {
             'instId': symbol,
             'tdMode': params['MARGIN_MODE'],
@@ -312,10 +315,10 @@ def place_order(symbol, side, pos_side, quantity):
             'posSide': pos_side.lower(),
             'ordType': 'market',
             'sz': str(round(quantity_in_contracts, 2)),
-            'clOrdId': f"order_{symbol}_{int(time.time())}",
+            'clOrdId': cl_ord_id,
             'attachAlgoOrds': [algo_order]
         }
-        logging.info(f"{symbol} 准备下单: 方向={side}, 持仓方向={pos_side}, 数量={quantity_in_contracts:.2f} 张 (约 {quantity_in_contracts * ct_val:.6f} {symbol.split('-')[0]})")
+        logging.info(f"{symbol} 准备下单: 方向={side}, 持仓方向={pos_side}, 数量={quantity_in_contracts:.2f} 张 (约 {quantity_in_contracts * ct_val:.6f} {symbol.split('-')[0]}), clOrdId={cl_ord_id}")
         order = trade_client.place_order(**order_params)
         if order['code'] == '0':
             action = '开多' if side == 'buy' and pos_side == 'long' else '开空' if side == 'sell' and pos_side == 'short' else '平仓'
