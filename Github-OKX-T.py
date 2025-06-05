@@ -268,6 +268,7 @@ def calculate_atr(df, period=7):
         return None
 
 def get_symbol_info(symbol):
+    """获取交易对信息，包括合约面值、最小下单单位和最小价格单位"""
     try:
         info = public_client.get_instruments(instType='SWAP', instId=symbol)
         if info.get('code') != '0':
@@ -275,20 +276,26 @@ def get_symbol_info(symbol):
         ct_val = float(info['data'][0]['ctVal'])
         min_qty = float(info['data'][0]['minSz'])
         tick_sz = float(info['data'][0]['tickSz'])
+        logging.info(f"{symbol} 合约信息: ct_val={ct_val}, min_qty={min_qty}, tick_sz={tick_sz}")
         return ct_val, min_qty, tick_sz
     except Exception as e:
-        logging.error(f"获取交易对信息失败: {symbol}, {str(e)}")
-        return 0.0001, 1, 0.01
+        logging.error(f"获取交易对信息失败: {symbol}, {str(e)}\n{traceback.format_exc()}")
+        return 0.01, 0.01, 0.01  # 默认值更新为更合理的值
 
 def place_order(symbol, side, pos_side, quantity):
     params = SYMBOL_PARAMS[symbol]
     try:
         ct_val, min_qty, tick_sz = get_symbol_info(symbol)
-        quantity = max(round(quantity / ct_val), 1)
-        if quantity < min_qty:
-            logging.warning(f"下单失败: {symbol}, 数量 {quantity} 张小于最小值 {min_qty} 张")
+        # 将币本位数量转换为张，保留两位小数（0.01张的倍数）
+        quantity_in_contracts = quantity / ct_val
+        # 确保数量为0.01的倍数
+        quantity_in_contracts = round(quantity_in_contracts / 0.01) * 0.01
+        # 确保数量不小于最小下单单位
+        quantity_in_contracts = max(quantity_in_contracts, min_qty)
+        if quantity_in_contracts < min_qty:
+            logging.warning(f"下单失败: {symbol}, 数量 {quantity_in_contracts:.2f} 张小于最小值 {min_qty:.2f} 张")
             return None
-        set_leverage(symbol)
+
         current_price = state[symbol]['current_price']
         tp_price = round(current_price * (1 + params['TAKE_PROFIT'] / 100 if pos_side == 'long' else 1 - params['TAKE_PROFIT'] / 100), -int(np.log10(tick_sz)))
         sl_price = round(current_price * (1 - params['STOP_LOSS'] / 100 if pos_side == 'long' else 1 + params['STOP_LOSS'] / 100), -int(np.log10(tick_sz)))
@@ -307,14 +314,14 @@ def place_order(symbol, side, pos_side, quantity):
             'side': side.lower(),
             'posSide': pos_side.lower(),
             'ordType': 'market',
-            'sz': str(quantity),
+            'sz': str(round(quantity_in_contracts, 2)),  # 下单数量，保留两位小数
             'clOrdId': f"order_{symbol}_{int(time.time())}",
             'attachAlgoOrds': [algo_order]
         }
         order = trade_client.place_order(**order_params)
         if order['code'] == '0':
             action = '开多' if side == 'buy' and pos_side == 'long' else '开空' if side == 'sell' and pos_side == 'short' else '平仓'
-            logging.info(f"{symbol} {action} 订单已下: 数量 {quantity} 张, 止盈 {params['TAKE_PROFIT']}%, 止损 {params['STOP_LOSS']}%")
+            logging.info(f"{symbol} {action} 订单已下: 数量 {quantity_in_contracts:.2f} 张 (约 {quantity_in_contracts * ct_val:.6f} {symbol.split('-')[0]}), 止盈 {params['TAKE_PROFIT']}%, 止损 {params['STOP_LOSS']}%")
             return order['data'][0]['ordId']
         else:
             logging.error(f"下单失败: {symbol}, {order['msg']}")
@@ -358,7 +365,7 @@ def check_take_profit_stop_loss(symbol, long_qty, short_qty, long_avg_price, sho
     params = SYMBOL_PARAMS[symbol]
     try:
         pos_side = None
-        qty = 0
+        qty = 0.0
         reason = None
         if long_qty > 0 and long_avg_price > 0:
             profit_percentage = (current_price - long_avg_price) / long_avg_price * 100
@@ -399,7 +406,7 @@ def check_take_profit_stop_loss(symbol, long_qty, short_qty, long_avg_price, sho
         return pos_side, qty, reason
     except Exception as e:
         logging.error(f"检查止盈止损错误: {symbol}, {str(e)}\n{traceback.format_exc()}")
-        return None, 0, None
+        return None, 0.0, None
 
 def execute_trading_logic(symbol):
     """执行数据获取、计算和交易逻辑"""
@@ -449,8 +456,8 @@ def execute_trading_logic(symbol):
         if usdt_balance is None:
             logging.warning(f"{symbol} 获取余额失败，跳过交易")
             return False
-        if usdt_balance < 10:
-            logging.warning(f"{symbol} USDT余额不足: {usdt_balance:.2f}，跳过交易")
+        if usdt_balance < 10:  # 余额阈值
+            logging.warning(f"{symbol} USDT余额不足: {usdt_balance:.2f}，建议至少10 USDT")
             return False
 
         # 获取当前价格
@@ -462,14 +469,14 @@ def execute_trading_logic(symbol):
             logging.warning(f"{symbol} 无法获取价格，跳过交易")
             return False
 
-        logging.info(f"{symbol} 账户状态: USDT余额={usdt_balance:.2f}, 总权益={total_equity:.2f}, 多仓={long_qty:.0f}, 空仓={short_qty:.0f}")
+        logging.info(f"{symbol} 账户状态: USDT余额={usdt_balance:.2f}, 总权益={total_equity:.2f}, 多仓={long_qty:.2f}, 空仓={short_qty:.2f}")
 
         # 检查止盈止损或反向信号
         pos_side, qty, reason = check_take_profit_stop_loss(symbol, long_qty, short_qty, long_avg_price, short_avg_price, state[symbol]['current_price'], state[symbol]['latest_rsi'], macd, signal)
         if pos_side and qty > 0:
             order = place_order(symbol, 'sell' if pos_side == 'long' else 'buy', pos_side, qty)
             if order:
-                logging.info(f"{symbol} 平仓: {reason}, 数量 {qty:.0f} 张")
+                logging.info(f"{symbol} 平仓: {reason}, 数量 {qty:.2f} 张")
                 usdt_balance, long_qty, short_qty, long_avg_price, short_avg_price, total_equity = get_balance(symbol)
                 if usdt_balance is None:
                     logging.warning(f"{symbol} 平仓后获取余额失败，跳过开仓")
@@ -478,56 +485,62 @@ def execute_trading_logic(symbol):
         # 仅当无仓位时开仓
         if long_qty == 0 and short_qty == 0:
             max_quantity = (total_equity * dynamic_buy_ratio) / state[symbol]['current_price'] * params['LEVERAGE']
+            ct_val, min_qty, tick_sz = get_symbol_info(symbol)
+            min_quantity = min_qty * ct_val  # 转换为币本位
             if state[symbol]['latest_rsi'] <= params['RSI_BUY_VALUE']:
                 quantity = min((usdt_balance * dynamic_buy_ratio) / state[symbol]['current_price'] * params['LEVERAGE'], max_quantity)
-                if quantity > 0:
+                if quantity >= min_quantity:
                     order = place_order(symbol, 'buy', 'long', quantity)
                     if order:
-                        logging.info(f"{symbol} RSI 开多: 数量 {quantity:.0f} 张")
+                        logging.info(f"{symbol} RSI 开多: 数量 {quantity:.6f} {symbol.split('-')[0]} (约 {(quantity / ct_val):.2f} 张)")
                     else:
-                        logging.info(f"{symbol} RSI 未开多: 余额不足或数量过小")
+                        logging.warning(f"{symbol} RSI 未开多: 下单失败")
                     return True
                 else:
-                    logging.info(f"{symbol} RSI 未开多: RSI={state[symbol]['latest_rsi']:.2f} 未达买入阈值 {params['RSI_BUY_VALUE']}")
+                    logging.info(f"{symbol} RSI 未开多: 数量 {quantity:.6f} 小于最小下单单位 {min_quantity:.6f}")
             elif state[symbol]['latest_rsi'] >= params['RSI_SELL_VALUE']:
                 quantity = min((usdt_balance * dynamic_buy_ratio) / state[symbol]['current_price'] * params['LEVERAGE'], max_quantity)
-                if quantity > 0:
+                if quantity >= min_quantity:
                     order = place_order(symbol, 'sell', 'short', quantity)
                     if order:
-                        logging.info(f"{symbol} RSI 开空: 数量 {quantity:.0f} 张")
+                        logging.info(f"{symbol} RSI 开空: 数量 {quantity:.6f} {symbol.split('-')[0]} (约 {(quantity / ct_val):.2f} 张)")
                     else:
-                        logging.info(f"{symbol} RSI 未开空: 余额不足或数量过小")
+                        logging.warning(f"{symbol} RSI 未开空: 下单失败")
                     return True
                 else:
-                    logging.info(f"{symbol} RSI 未开空: RSI={state[symbol]['latest_rsi']:.2f} 未达卖出阈值 {params['RSI_SELL_VALUE']}")
+                    logging.info(f"{symbol} RSI 未开空: 数量 {quantity:.6f} 小于最小下单单位 {min_quantity:.6f}")
             elif len(macd) >= 2 and len(signal) >= 2:
                 if state[symbol]['latest_macd'] < 0 and state[symbol]['latest_macd'] > state[symbol]['latest_signal'] and macd.iloc[-2] <= signal.iloc[-2] and state[symbol]['latest_histogram'] > 0:
                     logging.info(f"{symbol} MACD 检测到负区金叉")
                     quantity = min((usdt_balance * dynamic_buy_ratio) / state[symbol]['current_price'] * params['LEVERAGE'], max_quantity)
-                    if quantity > 0:
+                    if quantity >= min_quantity:
                         order = place_order(symbol, 'buy', 'long', quantity)
                         if order:
-                            logging.info(f"{symbol} MACD 开多: 数量 {quantity:.0f} 张")
+                            logging.info(f"{symbol} MACD 开多: 数量 {quantity:.6f} {symbol.split('-')[0]} (约 {(quantity / ct_val):.2f} 张)")
                         else:
-                            logging.info(f"{symbol} MACD 未开多: 余额不足或数量过小")
+                            logging.warning(f"{symbol} MACD 未开多: 下单失败")
                         return True
+                    else:
+                        logging.info(f"{symbol} MACD 未开多: 数量 {quantity:.6f} 小于最小下单单位 {min_quantity:.6f}")
                 elif state[symbol]['latest_macd'] > 0 and state[symbol]['latest_macd'] < state[symbol]['latest_signal'] and macd.iloc[-2] >= signal.iloc[-2] and state[symbol]['latest_histogram'] < 0:
                     logging.info(f"{symbol} MACD 检测到正区死叉")
                     quantity = min((usdt_balance * dynamic_buy_ratio) / state[symbol]['current_price'] * params['LEVERAGE'], max_quantity)
-                    if quantity > 0:
+                    if quantity >= min_quantity:
                         order = place_order(symbol, 'sell', 'short', quantity)
                         if order:
-                            logging.info(f"{symbol} MACD 开空: 数量 {quantity:.0f} 张")
+                            logging.info(f"{symbol} MACD 开空: 数量 {quantity:.6f} {symbol.split('-')[0]} (约 {(quantity / ct_val):.2f} 张)")
                         else:
-                            logging.info(f"{symbol} MACD 未开空: 余额不足或数量过小")
+                            logging.warning(f"{symbol} MACD 未开空: 下单失败")
                         return True
+                    else:
+                        logging.info(f"{symbol} MACD 未开空: 数量 {quantity:.6f} 小于最小下单单位 {min_quantity:.6f}")
                 else:
                     logging.info(f"{symbol} MACD 未形成金叉或死叉")
             else:
                 logging.warning(f"{symbol} MACD 数据长度不足: macd={len(macd)}, signal={len(signal)}")
                 return False
         else:
-            logging.info(f"{symbol} 未开新仓: 当前持仓 多仓={long_qty:.0f}, 空仓={short_qty:.0f}")
+            logging.info(f"{symbol} 未开新仓: 当前持仓 多仓={long_qty:.2f}, 空仓={short_qty:.2f}")
         return True
     except Exception as e:
         logging.error(f"{symbol} 交易逻辑错误: {str(e)}\n{traceback.format_exc()}")
