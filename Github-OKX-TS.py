@@ -345,17 +345,26 @@ def get_balance(symbol):
             balance = account_client.get_account_balance()
             if balance.get('code') != '0':
                 raise Exception(f"获取余额失败: {balance.get('msg', '未知错误')}")
-            usdt = float(next((asset for asset in balance['data'][0]['details'] if asset['ccy'] == 'USDT'), {'availEq': '0'})['availEq'])
-            total_equity = float(balance['data'][0]['totalEq'])
+            # 记录原始余额数据
+            logging.debug(f"{symbol} 账户余额原始数据: {balance.get('data', '无数据')}")
+            if not balance.get('data') or not balance['data'][0].get('details'):
+                logging.warning(f"{symbol} 账户余额数据为空或无 details 字段")
+                usdt = 0.0  # 默认余额为0
+            else:
+                usdt_asset = next((asset for asset in balance['data'][0]['details'] if asset['ccy'] == 'USDT'), {'availEq': '0'})
+                usdt = float(usdt_asset['availEq']) if usdt_asset['availEq'] else 0.0
+            total_equity = float(balance['data'][0]['totalEq']) if balance['data'][0].get('totalEq') else 0.0
             positions = account_client.get_positions(instType='SWAP', instId=symbol)
+            if positions.get('code') != '0':
+                raise Exception(f"获取持仓失败: {positions.get('msg', '未知错误')}")
             long_qty = 0
             short_qty = 0
             long_avg_price = 0.0
             short_avg_price = 0.0
-            if positions.get('code') == '0' and positions.get('data'):
+            if positions.get('data'):
                 for pos in positions['data']:
                     if pos['instId'] == symbol:
-                        qty = float(pos['pos'])
+                        qty = float(pos['pos']) if pos['pos'] else 0.0
                         avg_price = float(pos['avgPx']) if pos['avgPx'] else 0.0
                         if pos['posSide'] == 'long':
                             long_qty = qty
@@ -363,12 +372,13 @@ def get_balance(symbol):
                         elif pos['posSide'] == 'short':
                             short_qty = qty
                             short_avg_price = avg_price
+            logging.info(f"{symbol} 余额获取成功: USDT={usdt:.2f}, 总权益={total_equity:.2f}")
             return usdt, long_qty, short_qty, long_avg_price, short_avg_price, total_equity
         except Exception as e:
-            logging.error(f"获取余额失败: {symbol} (尝试 {attempt + 1}/3): {str(e)}")
+            logging.error(f"获取余额失败: {symbol} (尝试 {attempt + 1}/3): {str(e)}\n{traceback.format_exc()}")
             time.sleep(2)
     logging.error(f"获取余额失败: {symbol}, 重试次数耗尽")
-    return None, None, None, None, None, None
+    return 0.0, 0.0, 0.0, 0.0, 0.0, 0.0  # 默认返回 0
 
 def check_take_profit_stop_loss(symbol, long_qty, short_qty, long_avg_price, short_avg_price, current_price, rsi, macd, signal, atr=None):  # MODIFIED: Added atr parameter
     params = SYMBOL_PARAMS[symbol]
@@ -483,13 +493,12 @@ def execute_trading_logic(symbol):
 
         # 获取账户余额和持仓
         usdt_balance, long_qty, short_qty, long_avg_price, short_avg_price, total_equity = get_balance(symbol)
-        if usdt_balance is not None:
-            logging.warning(f"{symbol} 获取余额失败，跳过交易")
+        if usdt_balance < 0:  # 检查负余额
+            logging.warning(f"{symbol} USDT余额无效: {usdt_balance:.2f}")
             return False
-        if usdt_balance < 0:  # 余额阈值
-            logging.warning(f"{symbol} USDT余额不足: {usdt_balance:.2f}，至少要有 USDT")
+        if usdt_balance == 0 and total_equity == 0:  # 检查账户是否完全无资金
+            logging.warning(f"{symbol} 账户无可用资金: USDT={usdt_balance:.2f}, 总权益={total_equity:.2f}")
             return False
-
         # 获取当前价格
         price = get_price(symbol)
         if price:
