@@ -443,9 +443,6 @@ def execute_trading_logic(symbol):
         state[symbol]['latest_signal'] = signal.iloc[-1]
         state[symbol]['latest_histogram'] = histogram.iloc[-1]
 
-        # 计算ATR
-        import math
-
         # 计算ATR并调整仓位比例
         atr = calculate_atr(df_rsi, period=params['ATR_PERIOD'])
         if atr is None:
@@ -465,8 +462,8 @@ def execute_trading_logic(symbol):
         if usdt_balance is None:
             logging.warning(f"{symbol} 获取余额失败，跳过交易")
             return False
-        if usdt_balance < 10:  # 余额阈值
-            logging.warning(f"{symbol} USDT余额不足: {usdt_balance:.2f}，建议至少10 USDT")
+        if usdt_balance < 0:  # 余额阈值
+            logging.warning(f"{symbol} USDT余额不足: {usdt_balance:.2f}，至少要有 USDT")
             return False
 
         # 获取当前价格
