@@ -40,9 +40,13 @@
       "value": 7,
       "description": "ATR计算周期，用于动态调整仓位"
     },
+    "ATR_TARGET": {
+      "value": 210.0,
+      "description": "目标ATR值，ATR接近此值时仓位最大"
+    },
     "ATR_BASE": {
-      "value": 500.0,
-      "description": "ATR基准值，用于计算动态仓位比例"
+      "value": 100.0,
+      "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
     "BUY_RATIO_MIN": {
       "value": 0.05,
@@ -53,7 +57,6 @@
       "description": "最大仓位比例，范围0-1"
     }
   },
-
   "ETH-USDT-SWAP": {
     "RSI_TIMEFRAME": {
       "value": "1H",
@@ -95,9 +98,13 @@
       "value": 7,
       "description": "ATR计算周期，用于动态调整仓位"
     },
+    "ATR_TARGET": {
+      "value": 14.0,
+      "description": "目标ATR值，ATR接近此值时仓位最大"
+    },
     "ATR_BASE": {
-      "value": 25.0,
-      "description": "ATR基准值，用于计算动态仓位比例"
+      "value": 12.0,
+      "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
     "BUY_RATIO_MIN": {
       "value": 0.05,
@@ -108,7 +115,6 @@
       "description": "最大仓位比例，范围0-1"
     }
   },
-
   "SOL-USDT-SWAP": {
     "RSI_TIMEFRAME": {
       "value": "15m",
@@ -150,9 +156,13 @@
       "value": 7,
       "description": "ATR计算周期，用于动态调整仓位"
     },
+    "ATR_TARGET": {
+      "value": 0.8,
+      "description": "目标ATR值，ATR接近此值时仓位最大"
+    },
     "ATR_BASE": {
-      "value": 1.0,
-      "description": "ATR基准值，用于计算动态仓位比例"
+      "value": 0.4,
+      "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
     "BUY_RATIO_MIN": {
       "value": 0.03,
@@ -163,7 +173,6 @@
       "description": "最大仓位比例，范围0-1"
     }
   },
-
   "ADA-USDT-SWAP": {
     "RSI_TIMEFRAME": {
       "value": "1H",
@@ -205,9 +214,13 @@
       "value": 7,
       "description": "ATR计算周期，用于动态调整仓位"
     },
-    "ATR_BASE": {
+    "ATR_TARGET": {
       "value": 0.02,
-      "description": "ATR基准值，用于计算动态仓位比例"
+      "description": "目标ATR值，ATR接近此值时仓位最大"
+    },
+    "ATR_BASE": {
+      "value": 0.01,
+      "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
     "BUY_RATIO_MIN": {
       "value": 0.03,
