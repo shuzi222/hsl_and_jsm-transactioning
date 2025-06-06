@@ -52,7 +52,7 @@
       "value": 2.2,
       "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
     },
-    "ATR_STOP_MULTIPLIER": {
+    "ATR_SL_MULTIPLIER": {
       "value": 1.5,
       "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
     },
@@ -118,7 +118,7 @@
       "value": 2.2,
       "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
     },
-    "ATR_STOP_MULTIPLIER": {
+    "ATR_SL_MULTIPLIER": {
       "value": 1.2,
       "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
     },
@@ -184,7 +184,7 @@
       "value": 2.5,
       "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
     },
-    "ATR_STOP_MULTIPLIER": {
+    "ATR_SL_MULTIPLIER": {
       "value": 1.0,
       "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
     },
@@ -250,7 +250,7 @@
       "value": 1.2,
       "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
     },
-    "ATR_STOP_MULTIPLIER": {
+    "ATR_SL_MULTIPLIER": {
       "value": 0.6,
       "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
     },
