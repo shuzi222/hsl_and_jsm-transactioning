@@ -11,6 +11,7 @@ import okx.Account as Account
 import okx.PublicData as PublicData
 import traceback
 import math
+import uuid
 
 # 设置日志
 logging.basicConfig(
@@ -283,6 +284,9 @@ def get_symbol_info(symbol):
         logging.error(f"获取交易对信息失败: {symbol}, {str(e)}\n{traceback.format_exc()}")
         return 0.01, 0.01, 0.01  # 默认值更新为更合理的值
 
+import uuid
+import numpy as np
+
 def place_order(symbol, side, pos_side, quantity):
     params = SYMBOL_PARAMS[symbol]
     try:
@@ -313,14 +317,14 @@ def place_order(symbol, side, pos_side, quantity):
             'posSide': pos_side.lower(),
             'ordType': 'market',
             'sz': str(round(quantity_in_contracts, 2)),
-            'clOrdId': f"order_{symbol}_{int(time.time())}",
+            'clOrdId': str(uuid.uuid4())[:32],
             'attachAlgoOrds': [algo_order]
         }
         logging.info(f"{symbol} 准备下单: 方向={side}, 持仓方向={pos_side}, 数量={quantity_in_contracts:.2f} 张 (约 {quantity_in_contracts * ct_val:.6f} {symbol.split('-')[0]})")
         order = trade_client.place_order(**order_params)
         if order['code'] == '0':
             action = '开多' if side == 'buy' and pos_side == 'long' else '开空' if side == 'sell' and pos_side == 'short' else '平仓'
-            logging.info(f"{symbol} {action} 订单已下: 数量 {quantity_in_contracts:.2f} 张 (约 {quantity_in_contracts * ct_val:.6f} {symbol.split('-')[0]}), 止盈 {params['TAKE_PROFIT']}%, 止损 {params['STOP_LOSS']}%")
+            logging.info(f"{symbol} {action} 订单已下: 数量 {quantity_in_contracts:.2f} 张, 止盈 {params['TAKE_PROFIT']}%, 止损 {params['STOP_LOSS']}%")
             return order['data'][0]['ordId']
         else:
             logging.error(f"下单失败: {symbol}, 错误码={order['code']}, 错误信息={order['msg']}, 详情={order.get('data', '无详细信息')}")
