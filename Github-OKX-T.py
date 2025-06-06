@@ -317,7 +317,7 @@ def place_order(symbol, side, pos_side, quantity):
             'posSide': pos_side.lower(),
             'ordType': 'market',
             'sz': str(round(quantity_in_contracts, 2)),
-            'clOrdId': str(uuid.uuid4())[:32],
+            'clOrdId': str(uuid.uuid4()).replace('-', '')[:32],
             'attachAlgoOrds': [algo_order]
         }
         logging.info(f"{symbol} 准备下单: 方向={side}, 持仓方向={pos_side}, 数量={quantity_in_contracts:.2f} 张 (约 {quantity_in_contracts * ct_val:.6f} {symbol.split('-')[0]})")
