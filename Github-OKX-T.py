@@ -10,6 +10,7 @@ import okx.MarketData as MarketData
 import okx.Account as Account
 import okx.PublicData as PublicData
 import traceback
+import math
 
 # 设置日志
 logging.basicConfig(
@@ -51,7 +52,7 @@ def load_params():
         required_keys = [
             'RSI_TIMEFRAME', 'MACD_TIMEFRAME', 'RSI_BUY_VALUE', 'RSI_SELL_VALUE',
             'BUY_RATIO', 'LEVERAGE', 'MARGIN_MODE', 'TAKE_PROFIT', 'STOP_LOSS',
-            'ATR_PERIOD', 'ATR_BASE', 'BUY_RATIO_MIN', 'BUY_RATIO_MAX'
+            'ATR_PERIOD', 'ATR_TARGET', 'ATR_BASE', 'BUY_RATIO_MIN', 'BUY_RATIO_MAX'
         ]
 
         for symbol in symbols:
@@ -305,9 +306,6 @@ def place_order(symbol, side, pos_side, quantity):
             'slTriggerPxType': 'last',
             'tpTriggerPxType': 'last'
         }
-        # 生成符合要求的 clOrdId（字母数字，1-32 位）
-        import uuid
-        cl_ord_id = f"order{symbol.replace('-', '')}{int(time.time())}"[:32]
         order_params = {
             'instId': symbol,
             'tdMode': params['MARGIN_MODE'],
@@ -315,10 +313,10 @@ def place_order(symbol, side, pos_side, quantity):
             'posSide': pos_side.lower(),
             'ordType': 'market',
             'sz': str(round(quantity_in_contracts, 2)),
-            'clOrdId': cl_ord_id,
+            'clOrdId': f"order_{symbol}_{int(time.time())}",
             'attachAlgoOrds': [algo_order]
         }
-        logging.info(f"{symbol} 准备下单: 方向={side}, 持仓方向={pos_side}, 数量={quantity_in_contracts:.2f} 张 (约 {quantity_in_contracts * ct_val:.6f} {symbol.split('-')[0]}), clOrdId={cl_ord_id}")
+        logging.info(f"{symbol} 准备下单: 方向={side}, 持仓方向={pos_side}, 数量={quantity_in_contracts:.2f} 张 (约 {quantity_in_contracts * ct_val:.6f} {symbol.split('-')[0]})")
         order = trade_client.place_order(**order_params)
         if order['code'] == '0':
             action = '开多' if side == 'buy' and pos_side == 'long' else '开空' if side == 'sell' and pos_side == 'short' else '平仓'
@@ -442,17 +440,21 @@ def execute_trading_logic(symbol):
         state[symbol]['latest_histogram'] = histogram.iloc[-1]
 
         # 计算ATR
+        import math
+
+        # 计算ATR并调整仓位比例
         atr = calculate_atr(df_rsi, period=params['ATR_PERIOD'])
         if atr is None:
             logging.warning(f"{symbol} ATR计算失败，使用默认仓位比例")
             dynamic_buy_ratio = params['BUY_RATIO']
         else:
-            volatility_factor = min(1.5, params['ATR_BASE'] / max(atr, 0.01))  # 低波动时放大，最多1.5倍
-            volatility_factor = max(0.5, volatility_factor)  # 高波动时缩小，最小0.5倍
+            # 高斯函数：ATR接近ATR_TARGET时volatility_factor最大
+            diff = atr - params['ATR_TARGET']
+            volatility_factor = math.exp(-(diff ** 2) / (2 * params['ATR_BASE'] ** 2))
+            volatility_factor = max(0.5, min(1.5, volatility_factor * 1.5))  # 缩放至0.5-1.5
             dynamic_buy_ratio = params['BUY_RATIO'] * volatility_factor
             dynamic_buy_ratio = max(params['BUY_RATIO_MIN'], min(params['BUY_RATIO_MAX'], dynamic_buy_ratio))
-            logging.info(
-                f"{symbol} 动态仓位比例: ATR={atr:.2f}, 基准ATR={params['ATR_BASE']:.2f}, volatility_factor={volatility_factor:.2f}, dynamic_buy_ratio={dynamic_buy_ratio:.2f}")
+            logging.info(f"{symbol} 动态仓位比例: ATR={atr:.2f}, 目标ATR={params['ATR_TARGET']:.2f}, 基准ATR={params['ATR_BASE']:.2f}, volatility_factor={volatility_factor:.2f}, dynamic_buy_ratio={dynamic_buy_ratio:.2f}")
 
         # 获取账户余额和持仓
         usdt_balance, long_qty, short_qty, long_avg_price, short_avg_price, total_equity = get_balance(symbol)
@@ -548,7 +550,6 @@ def execute_trading_logic(symbol):
     except Exception as e:
         logging.error(f"{symbol} 交易逻辑错误: {str(e)}\n{traceback.format_exc()}")
         return False
-
 
 def trading_cycle():
     try:
