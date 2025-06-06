@@ -48,6 +48,14 @@
       "value": 100.0,
       "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
+    "ATR_TP_MULTIPLIER": {
+      "value": 2.2,
+      "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
+    },
+    "ATR_STOP_MULTIPLIER": {
+      "value": 1.5,
+      "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
+    },
     "BUY_RATIO_MIN": {
       "value": 0.05,
       "description": "最小仓位比例，范围0-1"
@@ -105,6 +113,14 @@
     "ATR_BASE": {
       "value": 12.0,
       "description": "ATR偏离值，用于以目标值为准计算偏离区间"
+    },
+    "ATR_TP_MULTIPLIER": {
+      "value": 2.2,
+      "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
+    },
+    "ATR_STOP_MULTIPLIER": {
+      "value": 1.2,
+      "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
     },
     "BUY_RATIO_MIN": {
       "value": 0.05,
@@ -164,6 +180,14 @@
       "value": 0.4,
       "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
+    "ATR_TP_MULTIPLIER": {
+      "value": 2.5,
+      "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
+    },
+    "ATR_STOP_MULTIPLIER": {
+      "value": 1.0,
+      "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
+    },
     "BUY_RATIO_MIN": {
       "value": 0.03,
       "description": "最小仓位比例，范围0-1"
@@ -221,6 +245,14 @@
     "ATR_BASE": {
       "value": 0.01,
       "description": "ATR偏离值，用于以目标值为准计算偏离区间"
+    },
+    "ATR_TP_MULTIPLIER": {
+      "value": 1.2,
+      "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
+    },
+    "ATR_STOP_MULTIPLIER": {
+      "value": 0.6,
+      "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
     },
     "BUY_RATIO_MIN": {
       "value": 0.03,
