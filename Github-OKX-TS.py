@@ -12,7 +12,6 @@ import okx.PublicData as PublicData
 import traceback
 import math
 import uuid
-from decimal import Decimal
 
 # 设置日志
 logging.basicConfig(
@@ -30,7 +29,7 @@ trade_client = None
 market_client = None
 account_client = None
 public_client = None
-symbols = ['BTC-USDT-SWAP', 'ETH-USDT-SWAP', 'SOL-USDT-SWAP', 'ADA-USDT-SWAP', 'PEPE-USDT-SWAP']
+symbols = ['BTC-USDT-SWAP', 'ETH-USDT-SWAP', 'SOL-USDT-SWAP', 'ADA-USDT-SWAP']
 state = {symbol: {'current_price': 0.0, 'latest_rsi': None, 'latest_macd': None, 'latest_signal': None, 'latest_histogram': None} for symbol in symbols}
 SYMBOL_PARAMS = {}  # 动态加载的参数
 
@@ -142,13 +141,9 @@ def get_price(symbol):
             ticker = market_client.get_ticker(instId=symbol)
             if ticker.get('code') != '0':
                 raise Exception(f"获取行情失败: {ticker.get('msg', '未知错误')}")
-            price_str = ticker['data'][0]['last']
-            price = Decimal(price_str)
-            if price <= 0:
-                raise ValueError(f"价格无效: {price_str}")
-            state[symbol]['current_price'] = float(price)
-            logging.info(f"{symbol} 当前价格: {price_str}")  # 记录原始字符串价格，方便处理高精度价格
-            return float(price)
+            price = float(ticker['data'][0]['last'])
+            state[symbol]['current_price'] = price
+            return price
         except Exception as e:
             logging.error(f"获取价格失败: {symbol} (尝试 {attempt + 1}/3): {str(e)}")
             time.sleep(2)
@@ -160,24 +155,20 @@ def get_klines(symbol, interval, limit=100):
         try:
             klines = market_client.get_candlesticks(instId=symbol, bar=interval, limit=str(limit))
             if not klines.get('data'):
-                logging.warning(f"无K线数据: {symbol}, {interval}, API响应: {klines}")
+                logging.warning(f"无K线数据: {symbol}, {interval}")
                 return None
             df = pd.DataFrame(klines['data'], columns=['ts', 'open', 'high', 'low', 'close', 'vol', 'volCcy', 'volCcyQuote', 'confirm'])
             df['ts'] = pd.to_datetime(df['ts'].astype(float), unit='ms')
-            # 使用Decimal处理高精度价格
-            for col in ['open', 'high', 'low', 'close']:
-                df[col] = df[col].apply(Decimal)
+            df[['open', 'high', 'low', 'close']] = df[['open', 'high', 'low', 'close']].astype(float)
             df = df.sort_values('ts').reset_index(drop=True)
             if df.empty:
                 logging.warning(f"无有效K线数据: {symbol}, {interval}")
                 return None
-            # 数据清理
             df = df.dropna(subset=['close'])
             df = df[df['close'] > 0]
             if len(df) < 34:
                 logging.warning(f"有效K线数据不足: {symbol}, {len(df)} 条，需至少 34 条")
                 return None
-            # 时间戳连续性验证
             timeframe_map = {
                 '1m': pd.Timedelta(minutes=1), '5m': pd.Timedelta(minutes=5), '15m': pd.Timedelta(minutes=15),
                 '30m': pd.Timedelta(minutes=30), '1H': pd.Timedelta(hours=1), '4H': pd.Timedelta(hours=4),
@@ -190,15 +181,7 @@ def get_klines(symbol, interval, limit=100):
             if len(df) > 1 and not df['ts'].diff().iloc[1:].eq(expected_diff).all():
                 logging.warning(f"K线时间戳不连续: {symbol}, 预期时间差 {expected_diff}, 周期 {interval}")
                 return None
-            # 转换为float用于指标计算
-            df[['open', 'high', 'low', 'close']] = df[['open', 'high', 'low', 'close']].astype(float)
-            # 检查价格波动
-            if (df['close'] == df['close'].iloc[0]).all():
-                logging.warning(f"无效K线数据: {symbol}, 收盘价无波动, 数据样本: {df[['ts', 'close']].tail(3).to_dict()}")
-                return None
-            # 日志记录
-            logging.debug(f"{symbol} 原始K线数据样本: {klines['data'][:3]}")  # 调试用
-            logging.info(f"K线数据统计: {symbol}, 长度={len(df)}, 收盘价最小={float(df['close'].min())}, 最大={float(df['close'].max())}, NaN={df['close'].isna().sum()}")
+            logging.info(f"K线数据统计: {symbol}, 长度={len(df)}, 收盘价最小={df['close'].min():.2f}, 最大={df['close'].max():.2f}, NaN={df['close'].isna().sum()}")
             logging.info(f"获取K线数据: {symbol}, {len(df)} 条, 最新时间: {df['ts'].iloc[-1]}")
             return df
         except Exception as e:
