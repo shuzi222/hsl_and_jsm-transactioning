@@ -262,5 +262,71 @@
       "value": 0.08,
       "description": "最大仓位比例，范围0-1"
     }
+  },
+  "PEPE-USDT-SWAP": {
+    "RSI_TIMEFRAME": {
+      "value": "1H",
+      "description": "RSI指标的K线周期（如'15m'表示15分钟）"
+    },
+    "MACD_TIMEFRAME": {
+      "value": "1H",
+      "description": "MACD指标的K线周期（如'1H'表示1小时）"
+    },
+    "RSI_BUY_VALUE": {
+      "value": 19.0,
+      "description": "RSI低于此值时触发买入（开多），范围0-100"
+    },
+    "RSI_SELL_VALUE": {
+      "value": 81.0,
+      "description": "RSI高于此值时触发卖出（开空），范围0-100"
+    },
+    "BUY_RATIO": {
+      "value": 0.05,
+      "description": "默认仓位比例（账户权益百分比），范围0-1"
+    },
+    "LEVERAGE": {
+      "value": 20.0,
+      "description": "交易杠杆倍数（如20表示20倍杠杆）"
+    },
+    "MARGIN_MODE": {
+      "value": "cross",
+      "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
+    },
+    "TAKE_PROFIT": {
+      "value": 1.2,
+      "description": "止盈百分比(注意这个是实际价格的百分比不是仓位盈利止盈（如10表示大饼价格涨10%平仓）"
+    },
+    "STOP_LOSS": {
+      "value": 0.3,
+      "description": "止损百分比(注意这个是实际价格的百分比不是仓位盈利止盈（如10表示大饼价格涨10%平仓）"
+    },
+    "ATR_PERIOD": {
+      "value": 7,
+      "description": "ATR计算周期，用于动态调整仓位"
+    },
+    "ATR_TARGET": {
+      "value": 0.000000280,
+      "description": "目标ATR值，ATR接近此值时仓位最大"
+    },
+    "ATR_BASE": {
+      "value": 0.000000100,
+      "description": "ATR偏离值，用于以目标值为准计算偏离区间"
+    },
+    "ATR_TP_MULTIPLIER": {
+      "value": 3.3,
+      "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
+    },
+    "ATR_SL_MULTIPLIER": {
+      "value": 0.6,
+      "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
+    },
+    "BUY_RATIO_MIN": {
+      "value": 0.02,
+      "description": "最小仓位比例，范围0-1"
+    },
+    "BUY_RATIO_MAX": {
+      "value": 0.08,
+      "description": "最大仓位比例，范围0-1"
+    }
   }
 }
