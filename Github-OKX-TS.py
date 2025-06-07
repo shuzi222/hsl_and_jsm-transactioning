@@ -271,7 +271,6 @@ def calculate_atr(df, period=7):
         return None
 
 def get_symbol_info(symbol):
-    """获取交易对信息，包括合约面值、最小下单单位和最小价格单位"""
     try:
         info = public_client.get_instruments(instType='SWAP', instId=symbol)
         if info.get('code') != '0':
@@ -279,19 +278,19 @@ def get_symbol_info(symbol):
         ct_val = float(info['data'][0]['ctVal'])
         min_qty = float(info['data'][0]['minSz'])
         tick_sz = float(info['data'][0]['tickSz'])
-        logging.info(f"{symbol} 合约信息: ct_val={ct_val}, min_qty={min_qty}, tick_sz={tick_sz}")
-        return ct_val, min_qty, tick_sz
+        lot_sz = float(info['data'][0].get('lotSz', min_qty))  # 获取lotSz，默认为min_qty
+        logging.info(f"{symbol} 合约信息: ct_val={ct_val}, min_qty={min_qty}, tick_sz={tick_sz}, lot_sz={lot_sz}")
+        return ct_val, min_qty, tick_sz, lot_sz
     except Exception as e:
         logging.error(f"获取交易对信息失败: {symbol}, {str(e)}\n{traceback.format_exc()}")
-        return 0.01, 0.01, 0.01  # 默认值更新为更合理的值
+        return 0.01, 0.01, 0.01, 0.01
 
-def place_order(symbol, side, pos_side, quantity, atr=None):  # MODIFIED: Added atr parameter
+def place_order(symbol, side, pos_side, quantity, atr=None):
     params = SYMBOL_PARAMS[symbol]
     try:
-        ct_val, min_qty, tick_sz = get_symbol_info(symbol)
+        ct_val, min_qty, tick_sz, lot_sz = get_symbol_info(symbol)  # 修改为接收lot_sz
         quantity_in_contracts = quantity / ct_val
-        quantity_in_contracts = round(quantity_in_contracts / 0.01) * 0.01
-        quantity_in_contracts = max(quantity_in_contracts, min_qty)
+        quantity_in_contracts = max(round(quantity_in_contracts / lot_sz) * lot_sz, min_qty)  # 确保数量是lot_sz的倍数
         if quantity_in_contracts < min_qty:
             logging.warning(f"下单失败: {symbol}, 数量 {quantity_in_contracts:.2f} 张小于最小值 {min_qty:.2f} 张")
             return None
