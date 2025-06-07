@@ -13,7 +13,7 @@
       "description": "RSI低于此值时触发买入（开多），范围0-100"
     },
     "RSI_SELL_VALUE": {
-      "value": 73.0,
+      "value": 20.0,
       "description": "RSI高于此值时触发卖出（开空），范围0-100"
     },
     "BUY_RATIO": {
