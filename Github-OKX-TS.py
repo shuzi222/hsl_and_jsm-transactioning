@@ -523,7 +523,7 @@ def execute_trading_logic(symbol):
         # 仅当无仓位时开仓
         if long_qty == 0 and short_qty == 0:
             max_quantity = (total_equity * dynamic_buy_ratio) / state[symbol]['current_price'] * params['LEVERAGE']
-            ct_val, min_qty, tick_sz = get_symbol_info(symbol)
+            ct_val, min_qty, tick_sz, lot_sz = get_symbol_info(symbol)
             min_quantity = min_qty * ct_val  # 转换为币本位
             if state[symbol]['latest_rsi'] <= params['RSI_BUY_VALUE']:
                 quantity = min((usdt_balance * dynamic_buy_ratio) / state[symbol]['current_price'] * params['LEVERAGE'], max_quantity)
