@@ -49,7 +49,7 @@
       "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
     "ATR_TP_MULTIPLIER": {
-      "value": 2.2,
+      "value": 3.3,
       "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
     },
     "ATR_SL_MULTIPLIER": {
