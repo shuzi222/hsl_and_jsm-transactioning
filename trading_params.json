@@ -83,7 +83,7 @@
       "description": "RSI高于此值时触发卖出（开空），范围0-100"
     },
     "BUY_RATIO": {
-      "value": 0.1,
+      "value": 0.08,
       "description": "默认仓位比例（账户权益百分比），范围0-1,0.1=10%"
     },
     "LEVERAGE": {
@@ -127,7 +127,7 @@
       "description": "最小仓位比例，范围0-1"
     },
     "BUY_RATIO_MAX": {
-      "value": 0.15,
+      "value": 0.12,
       "description": "最大仓位比例，范围0-1"
     }
   },
