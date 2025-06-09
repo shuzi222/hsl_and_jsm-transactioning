@@ -141,11 +141,11 @@
       "description": "MACD指标的K线周期（如'1H'表示1小时）"
     },
     "RSI_BUY_VALUE": {
-      "value": 25.0,
+      "value": 19.0,
       "description": "RSI低于此值时触发买入（开多），范围0-100"
     },
     "RSI_SELL_VALUE": {
-      "value": 83.0,
+      "value": 82.0,
       "description": "RSI高于此值时触发卖出（开空），范围0-100"
     },
     "BUY_RATIO": {
