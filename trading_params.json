@@ -1,7 +1,7 @@
 {
   "BTC-USDT-SWAP": {
     "RSI_TIMEFRAME": {
-      "value": "15m",
+      "value": "1H",
       "description": "RSI指标的K线周期（如'15m'表示15分钟(注意分钟要用小写m，小时用大写H（别问我为什么，问OK那帮SB去"
     },
     "MACD_TIMEFRAME": {
@@ -9,7 +9,7 @@
       "description": "MACD指标的K线周期（如'1H'表示1小时）"
     },
     "RSI_BUY_VALUE": {
-      "value": 23.0,
+      "value": 26.0,
       "description": "RSI低于此值时触发买入（开多），范围0-100"
     },
     "RSI_SELL_VALUE": {
@@ -17,7 +17,7 @@
       "description": "RSI高于此值时触发卖出（开空），范围0-100"
     },
     "BUY_RATIO": {
-      "value": 0.1,
+      "value": 0.08,
       "description": "默认仓位比例（账户权益百分比），范围0-1"
     },
     "LEVERAGE": {
@@ -61,7 +61,7 @@
       "description": "最小仓位比例，范围0-1"
     },
     "BUY_RATIO_MAX": {
-      "value": 0.2,
+      "value": 0.12,
       "description": "最大仓位比例，范围0-1"
     }
   },
