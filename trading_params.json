@@ -45,7 +45,7 @@
       "description": "目标ATR值，ATR接近此值时仓位最大"
     },
     "ATR_BASE": {
-      "value": 200.0,
+      "value": 500.0,
       "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
     "ATR_TP_MULTIPLIER": {
