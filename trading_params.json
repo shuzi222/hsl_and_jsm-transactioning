@@ -49,7 +49,7 @@
       "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
     "ATR_TP_MULTIPLIER": {
-      "value": 1.9,
+      "value": 3.0,
       "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
     },
     "ATR_SL_MULTIPLIER": {
@@ -115,7 +115,7 @@
       "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
     "ATR_TP_MULTIPLIER": {
-      "value": 1.9,
+      "value": 3.0,
       "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
     },
     "ATR_SL_MULTIPLIER": {
@@ -181,11 +181,11 @@
       "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
     "ATR_TP_MULTIPLIER": {
-      "value": 4.0,
+      "value": 4.8,
       "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
     },
     "ATR_SL_MULTIPLIER": {
-      "value": 1.4,
+      "value": 0.8,
       "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
     },
     "BUY_RATIO_MIN": {
@@ -215,7 +215,7 @@
       "description": "RSI高于此值时触发卖出（开空），范围0-100"
     },
     "BUY_RATIO": {
-      "value": 0.05,
+      "value": 0.03,
       "description": "默认仓位比例（账户权益百分比），范围0-1"
     },
     "LEVERAGE": {
@@ -227,7 +227,7 @@
       "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
     },
     "TAKE_PROFIT": {
-      "value": 1.2,
+      "value": 1.8,
       "description": "止盈百分比(注意这个是实际价格的百分比不是仓位盈利止盈（如10表示大饼价格涨10%平仓）"
     },
     "STOP_LOSS": {
@@ -255,11 +255,11 @@
       "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
     },
     "BUY_RATIO_MIN": {
-      "value": 0.02,
+      "value": 0.01,
       "description": "最小仓位比例，范围0-1"
     },
     "BUY_RATIO_MAX": {
-      "value": 0.08,
+      "value": 0.06,
       "description": "最大仓位比例，范围0-1"
     }
   },
@@ -281,7 +281,7 @@
       "description": "RSI高于此值时触发卖出（开空），范围0-100"
     },
     "BUY_RATIO": {
-      "value": 0.05,
+      "value": 0.03,
       "description": "默认仓位比例（账户权益百分比），范围0-1"
     },
     "LEVERAGE": {
@@ -321,11 +321,11 @@
       "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
     },
     "BUY_RATIO_MIN": {
-      "value": 0.02,
+      "value": 0.01,
       "description": "最小仓位比例，范围0-1"
     },
     "BUY_RATIO_MAX": {
-      "value": 0.08,
+      "value": 0.06,
       "description": "最大仓位比例，范围0-1"
     }
   }
