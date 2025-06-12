@@ -185,7 +185,7 @@
       "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
     },
     "ATR_SL_MULTIPLIER": {
-      "value": 0.8,
+      "value": 99.9,
       "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
     },
     "BUY_RATIO_MIN": {
