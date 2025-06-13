@@ -9,11 +9,11 @@
       "description": "MACD指标的K线周期（如'1H'表示1小时）"
     },
     "RSI_BUY_VALUE": {
-      "value": 26.0,
+      "value": 25.0,
       "description": "RSI低于此值时触发买入（开多），范围0-100"
     },
     "RSI_SELL_VALUE": {
-      "value": 73.0,
+      "value": 76.0,
       "description": "RSI高于此值时触发卖出（开空），范围0-100"
     },
     "BUY_RATIO": {
@@ -49,15 +49,15 @@
       "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
     "ATR_TP_MULTIPLIER": {
-      "value": 3.0,
+      "value": 1.8,
       "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
     },
     "ATR_SL_MULTIPLIER": {
-      "value": 0.6,
+      "value": 0.4,
       "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
     },
     "BUY_RATIO_MIN": {
-      "value": 0.01,
+      "value": 0.04,
       "description": "最小仓位比例，范围0-1"
     },
     "BUY_RATIO_MAX": {
