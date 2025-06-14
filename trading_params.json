@@ -171,6 +171,7 @@
     "STOP_LOSS": {
       "value": 0.5,
       "description": "默认止损百分比（实际价格百分比，如0.5表示价格下跌0.5%平仓）"
+    },
     "ATR_PERIOD": {
       "value": 7,
       "description": "ATR计算周期，用于动态调整仓位"
