@@ -160,14 +160,17 @@
       "value": "cross",
       "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
     },
+    "RSI_TAKE_PROFIT": { "value": 1.8, "description": "RSI止盈百分比（实际价格百分比，如1.8表示价格上涨1.8%平仓）"},
+    "RSI_STOP_LOSS": { "value": 0.6, "description": "RSI止损百分比（实际价格百分比，如0.6表示价格下跌0.6%平仓）" },
+    "MACD_TAKE_PROFIT": {  "value": 2.0,  "description": "MACD止盈百分比（实际价格百分比，如2.0表示价格上涨2.0%平仓）" },
+    "MACD_STOP_LOSS": { "value": 0.8, "description": "MACD止损百分比（实际价格百分比，如0.8表示价格下跌0.8%平仓）" },
     "TAKE_PROFIT": {
       "value": 1.5,
-      "description": "止盈百分比(注意这个是实际价格的百分比不是仓位盈利止盈（如10表示大饼价格涨10%平仓）"
+      "description": "默认止盈百分比（实际价格百分比，如1.5表示价格上涨1.5%平仓）"
     },
     "STOP_LOSS": {
       "value": 0.5,
-      "description": "止损百分比(注意这个是实际价格的百分比不是仓位盈利止盈（如10表示大饼价格涨10%平仓）"
-    },
+      "description": "默认止损百分比（实际价格百分比，如0.5表示价格下跌0.5%平仓）"
     "ATR_PERIOD": {
       "value": 7,
       "description": "ATR计算周期，用于动态调整仓位"
