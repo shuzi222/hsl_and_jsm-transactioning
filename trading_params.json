@@ -160,10 +160,6 @@
       "value": "cross",
       "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
     },
-    "RSI_TAKE_PROFIT": { "value": 1.8, "description": "RSI止盈百分比（实际价格百分比，如1.8表示价格上涨1.8%平仓）"},
-    "RSI_STOP_LOSS": { "value": 0.6, "description": "RSI止损百分比（实际价格百分比，如0.6表示价格下跌0.6%平仓）" },
-    "MACD_TAKE_PROFIT": {  "value": 2.0,  "description": "MACD止盈百分比（实际价格百分比，如2.0表示价格上涨2.0%平仓）" },
-    "MACD_STOP_LOSS": { "value": 0.8, "description": "MACD止损百分比（实际价格百分比，如0.8表示价格下跌0.8%平仓）" },
     "TAKE_PROFIT": {
       "value": 1.5,
       "description": "默认止盈百分比（实际价格百分比，如1.5表示价格上涨1.5%平仓）"
@@ -184,17 +180,13 @@
       "value": 0.4,
       "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
-    "RSI_ATR_TP_MULTIPLIER": { "value": 2.4, "description": "RSI ATR止盈倍数" },
-    "RSI_ATR_SL_MULTIPLIER": { "value": 0.7, "description": "RSI ATR止损倍数" },
-    "MACD_ATR_TP_MULTIPLIER": { "value": 1.7, "description": "MACD ATR止盈倍数" },
-    "MACD_ATR_SL_MULTIPLIER": { "value": 2.0, "description": "MACD ATR止损倍数" },
     "ATR_TP_MULTIPLIER": {
       "value": 2.4,
-      "description": "默认ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
+      "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
     },
     "ATR_SL_MULTIPLIER": {
       "value": 0.7,
-      "description": "默认ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
+      "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
     },
     "BUY_RATIO_MIN": {
       "value": 0.04,
