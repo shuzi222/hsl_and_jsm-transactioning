@@ -133,7 +133,7 @@
   },
   "SOL-USDT-SWAP": {
     "RSI_TIMEFRAME": {
-      "value": "15m",
+      "value": "1H",
       "description": "RSI指标的K线周期（如'15m'表示15分钟）"
     },
     "MACD_TIMEFRAME": {
@@ -141,11 +141,11 @@
       "description": "MACD指标的K线周期（如'1H'表示1小时）"
     },
     "RSI_BUY_VALUE": {
-      "value": 19.0,
+      "value": 23.0,
       "description": "RSI低于此值时触发买入（开多），范围0-100"
     },
     "RSI_SELL_VALUE": {
-      "value": 82.0,
+      "value": 74.0,
       "description": "RSI高于此值时触发卖出（开空），范围0-100"
     },
     "BUY_RATIO": {
@@ -181,11 +181,11 @@
       "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
     "ATR_TP_MULTIPLIER": {
-      "value": 99.9,
+      "value": 2.4,
       "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
     },
     "ATR_SL_MULTIPLIER": {
-      "value": 99.9,
+      "value": 0.7,
       "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
     },
     "BUY_RATIO_MIN": {
