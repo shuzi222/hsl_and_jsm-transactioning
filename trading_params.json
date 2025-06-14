@@ -180,20 +180,16 @@
       "value": 0.4,
       "description": "ATR偏离值，用于以目标值为准计算偏离区间"
     },
-    "ATR_TP_MULTIPLIER": {
-      "value": 2.4,
-      "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
-    },
-    "ATR_SL_MULTIPLIER": {
-      "value": 0.7,
-      "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
-    },
+    "RSI_ATR_TP_MULTIPLIER": { "value": 2.4, "description": "RSI ATR止盈倍数" },
+    "RSI_ATR_SL_MULTIPLIER": { "value": 0.7, "description": "RSI ATR止损倍数" },
+    "MACD_ATR_TP_MULTIPLIER": { "value": 1.7, "description": "MACD ATR止盈倍数" },
+    "MACD_ATR_SL_MULTIPLIER": { "value": 2.0, "description": "MACD ATR止损倍数" },
     "BUY_RATIO_MIN": {
-      "value": 0.05,
+      "value": 0.04,
       "description": "最小仓位比例，范围0-1"
     },
     "BUY_RATIO_MAX": {
-      "value": 0.15,
+      "value": 0.12,
       "description": "最大仓位比例，范围0-1"
     }
   },
