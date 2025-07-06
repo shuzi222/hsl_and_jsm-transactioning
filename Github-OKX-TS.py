@@ -29,7 +29,7 @@ trade_client = None
 market_client = None
 account_client = None
 public_client = None
-symbols = ['BTC-USDT-SWAP', 'ETH-USDT-SWAP', 'SOL-USDT-SWAP', 'ADA-USDT-SWAP','XRP-USDT-SWAP']
+symbols = ['BTC-USDT-SWAP', 'SOL-USDT-SWAP', 'ADA-USDT-SWAP','XRP-USDT-SWAP']
 state = {symbol: {'current_price': 0.0, 'latest_rsi': None, 'latest_macd': None, 'latest_signal': None, 'latest_histogram': None} for symbol in symbols}
 SYMBOL_PARAMS = {}  # 动态加载的参数
 
