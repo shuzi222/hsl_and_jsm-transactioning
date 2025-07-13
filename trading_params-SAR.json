@@ -1,20 +1,332 @@
 {
   "BTC-USDT-SWAP": {
-    "SAT_TIMEFRAME_1D": {"value": "1D", "description": "日线周期"},
-    "SAT_TIMEFRAME_1H": {"value": "1H", "description": "1小时周期"},
-    "SAT_PERIOD": {"value": 7, "description": "Supertrend ATR周期"},
-    "SAT_MULTIPLIER": {"value": 3.0, "description": "Supertrend ATR倍数"},
-    "BUY_RATIO": {"value": 0.1, "description": "仓位比例"},
-    "LEVERAGE": {"value": 10, "description": "杠杆倍数"},
-    "MARGIN_MODE": {"value": "isolated", "description": "保证金模式"},
-    "TAKE_PROFIT": {"value": 5.0, "description": "止盈百分比"},
-    "STOP_LOSS": {"value": 2.0, "description": "止损百分比"},
-    "ATR_PERIOD": {"value": 7, "description": "ATR周期"},
-    "ATR_TARGET": {"value": 0.01, "description": "ATR目标值"},
-    "ATR_BASE": {"value": 0.005, "description": "ATR基准值"},
-    "BUY_RATIO_MIN": {"value": 0.05, "description": "最小仓位比例"},
-    "BUY_RATIO_MAX": {"value": 0.2, "description": "最大仓位比例"},
-    "ATR_TP_MULTIPLIER": {"value": 2.0, "description": "ATR止盈倍数"},
-    "ATR_SL_MULTIPLIER": {"value": 1.0, "description": "ATR止损倍数"}
+    "SAT_TIMEFRAME_1D": {
+      "value": "1D",
+      "description": "日线周期用于Supertrend趋势判断"
+    },
+    "SAT_TIMEFRAME_1H": {
+      "value": "1H",
+      "description": "1小时周期用于Supertrend开仓信号"
+    },
+    "SAT_PERIOD": {
+      "value": 7,
+      "description": "Supertrend ATR周期"
+    },
+    "SAT_MULTIPLIER": {
+      "value": 3.0,
+      "description": "Supertrend ATR倍数"
+    },
+    "BUY_RATIO": {
+      "value": 0.08,
+      "description": "默认仓位比例（账户权益百分比），范围0-1"
+    },
+    "LEVERAGE": {
+      "value": 20.0,
+      "description": "交易杠杆倍数（如20表示20倍杠杆）"
+    },
+    "MARGIN_MODE": {
+      "value": "cross",
+      "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
+    },
+    "TAKE_PROFIT": {
+      "value": 0.5,
+      "description": "止盈百分比（实际价格百分比，如0.5表示价格上涨0.5%平仓）"
+    },
+    "STOP_LOSS": {
+      "value": 0.3,
+      "description": "止损百分比（实际价格百分比，如0.3表示价格下跌0.3%平仓）"
+    },
+    "ATR_PERIOD": {
+      "value": 7,
+      "description": "ATR计算周期，用于动态调整仓位"
+    },
+    "ATR_TARGET": {
+      "value": 290.0,
+      "description": "目标ATR值，ATR接近此值时仓位最大"
+    },
+    "ATR_BASE": {
+      "value": 500.0,
+      "description": "ATR偏离值，用于以目标值为准计算偏离区间"
+    },
+    "ATR_TP_MULTIPLIER": {
+      "value": 2.1,
+      "description": "ATR止盈倍数，用于计算止盈价格（如2.1表示止盈为2.1倍ATR）"
+    },
+    "ATR_SL_MULTIPLIER": {
+      "value": 0.4,
+      "description": "ATR止损倍数，用于计算止损价格（如0.4表示止损为0.4倍ATR）"
+    },
+    "BUY_RATIO_MIN": {
+      "value": 0.04,
+      "description": "最小仓位比例，范围0-1"
+    },
+    "BUY_RATIO_MAX": {
+      "value": 0.12,
+      "description": "最大仓位比例，范围0-1"
+    }
+  },
+  "ETH-USDT-SWAP": {
+    "SAT_TIMEFRAME_1D": {
+      "value": "1D",
+      "description": "日线周期用于Supertrend趋势判断"
+    },
+    "SAT_TIMEFRAME_1H": {
+      "value": "1H",
+      "description": "1小时周期用于Supertrend开仓信号"
+    },
+    "SAT_PERIOD": {
+      "value": 7,
+      "description": "Supertrend ATR周期"
+    },
+    "SAT_MULTIPLIER": {
+      "value": 3.0,
+      "description": "Supertrend ATR倍数"
+    },
+    "BUY_RATIO": {
+      "value": 0.08,
+      "description": "默认仓位比例（账户权益百分比），范围0-1"
+    },
+    "LEVERAGE": {
+      "value": 20.0,
+      "description": "交易杠杆倍数（如20表示20倍杠杆）"
+    },
+    "MARGIN_MODE": {
+      "value": "cross",
+      "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
+    },
+    "TAKE_PROFIT": {
+      "value": 0.8,
+      "description": "止盈百分比（实际价格百分比，如0.8表示价格上涨0.8%平仓）"
+    },
+    "STOP_LOSS": {
+      "value": 0.2,
+      "description": "止损百分比（实际价格百分比，如0.2表示价格下跌0.2%平仓）"
+    },
+    "ATR_PERIOD": {
+      "value": 7,
+      "description": "ATR计算周期，用于动态调整仓位"
+    },
+    "ATR_TARGET": {
+      "value": 14.0,
+      "description": "目标ATR值，ATR接近此值时仓位最大"
+    },
+    "ATR_BASE": {
+      "value": 11.0,
+      "description": "ATR偏离值，用于以目标值为准计算偏离区间"
+    },
+    "ATR_TP_MULTIPLIER": {
+      "value": 2.0,
+      "description": "ATR止盈倍数，用于计算止盈价格（如2.0表示止盈为2.0倍ATR）"
+    },
+    "ATR_SL_MULTIPLIER": {
+      "value": 1.0,
+      "description": "ATR止损倍数，用于计算止损价格（如1.0表示止损为1.0倍ATR）"
+    },
+    "BUY_RATIO_MIN": {
+      "value": 0.04,
+      "description": "最小仓位比例，范围0-1"
+    },
+    "BUY_RATIO_MAX": {
+      "value": 0.12,
+      "description": "最大仓位比例，范围0-1"
+    }
+  },
+  "SOL-USDT-SWAP": {
+    "SAT_TIMEFRAME_1D": {
+      "value": "1D",
+      "description": "日线周期用于Supertrend趋势判断"
+    },
+    "SAT_TIMEFRAME_1H": {
+      "value": "1H",
+      "description": "1小时周期用于Supertrend开仓信号"
+    },
+    "SAT_PERIOD": {
+      "value": 7,
+      "description": "Supertrend ATR周期"
+    },
+    "SAT_MULTIPLIER": {
+      "value": 3.0,
+      "description": "Supertrend ATR倍数"
+    },
+    "BUY_RATIO": {
+      "value": 0.08,
+      "description": "默认仓位比例（账户权益百分比），范围0-1"
+    },
+    "LEVERAGE": {
+      "value": 20.0,
+      "description": "交易杠杆倍数（如20表示20倍杠杆）"
+    },
+    "MARGIN_MODE": {
+      "value": "cross",
+      "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
+    },
+    "TAKE_PROFIT": {
+      "value": 1.5,
+      "description": "止盈百分比（实际价格百分比，如1.5表示价格上涨1.5%平仓）"
+    },
+    "STOP_LOSS": {
+      "value": 0.5,
+      "description": "止损百分比（实际价格百分比，如0.5表示价格下跌0.5%平仓）"
+    },
+    "ATR_PERIOD": {
+      "value": 7,
+      "description": "ATR计算周期，用于动态调整仓位"
+    },
+    "ATR_TARGET": {
+      "value": 0.8,
+      "description": "目标ATR值，ATR接近此值时仓位最大"
+    },
+    "ATR_BASE": {
+      "value": 0.4,
+      "description": "ATR偏离值，用于以目标值为准计算偏离区间"
+    },
+    "ATR_TP_MULTIPLIER": {
+      "value": 1.7,
+      "description": "ATR止盈倍数，用于计算止盈价格（如1.7表示止盈为1.7倍ATR）"
+    },
+    "ATR_SL_MULTIPLIER": {
+      "value": 2.3,
+      "description": "ATR止损倍数，用于计算止损价格（如2.3表示止损为2.3倍ATR）"
+    },
+    "BUY_RATIO_MIN": {
+      "value": 0.04,
+      "description": "最小仓位比例，范围0-1"
+    },
+    "BUY_RATIO_MAX": {
+      "value": 0.12,
+      "description": "最大仓位比例，范围0-1"
+    }
+  },
+  "ADA-USDT-SWAP": {
+    "SAT_TIMEFRAME_1D": {
+      "value": "1D",
+      "description": "日线周期用于Supertrend趋势判断"
+    },
+    "SAT_TIMEFRAME_1H": {
+      "value": "1H",
+      "description": "1小时周期用于Supertrend开仓信号"
+    },
+    "SAT_PERIOD": {
+      "value": 7,
+      "description": "Supertrend ATR周期"
+    },
+    "SAT_MULTIPLIER": {
+      "value": 3.0,
+      "description": "Supertrend ATR倍数"
+    },
+    "BUY_RATIO": {
+      "value": 0.05,
+      "description": "默认仓位比例（账户权益百分比），范围0-1"
+    },
+    "LEVERAGE": {
+      "value": 20.0,
+      "description": "交易杠杆倍数（如20表示20倍杠杆）"
+    },
+    "MARGIN_MODE": {
+      "value": "cross",
+      "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
+    },
+    "TAKE_PROFIT": {
+      "value": 1.8,
+      "description": "止盈百分比（实际价格百分比，如1.8表示价格上涨1.8%平仓）"
+    },
+    "STOP_LOSS": {
+      "value": 0.6,
+      "description": "止损百分比（实际价格百分比，如0.6表示价格下跌0.6%平仓）"
+    },
+    "ATR_PERIOD": {
+      "value": 7,
+      "description": "ATR计算周期，用于动态调整仓位"
+    },
+    "ATR_TARGET": {
+      "value": 0.01,
+      "description": "目标ATR值，ATR接近此值时仓位最大"
+    },
+    "ATR_BASE": {
+      "value": 0.01,
+      "description": "ATR偏离值，用于以目标值为准计算偏离区间"
+    },
+    "ATR_TP_MULTIPLIER": {
+      "value": 1.2,
+      "description": "ATR止盈倍数，用于计算止盈价格（如1.2表示止盈为1.2倍ATR）"
+    },
+    "ATR_SL_MULTIPLIER": {
+      "value": 0.4,
+      "description": "ATR止损倍数，用于计算止损价格（如0.4表示止损为0.4倍ATR）"
+    },
+    "BUY_RATIO_MIN": {
+      "value": 0.05,
+      "description": "最小仓位比例，范围0-1"
+    },
+    "BUY_RATIO_MAX": {
+      "value": 0.05,
+      "description": "最大仓位比例，范围0-1"
+    }
+  },
+  "XRP-USDT-SWAP": {
+    "SAT_TIMEFRAME_1D": {
+      "value": "1D",
+      "description": "日线周期用于Supertrend趋势判断"
+    },
+    "SAT_TIMEFRAME_1H": {
+      "value": "1H",
+      "description": "1小时周期用于Supertrend开仓信号"
+    },
+    "SAT_PERIOD": {
+      "value": 7,
+      "description": "Supertrend ATR周期"
+    },
+    "SAI_MULTIPLIER": {
+      "value": 3.0,
+      "description": "Supertrend ATR倍数"
+    },
+    "BUY_RATIO": {
+      "value": 0.03,
+      "description": "默认仓位比例（账户权益百分比），范围0-1"
+    },
+    "LEVERAGE": {
+      "value": 20.0,
+      "description": "交易杠杆倍数（如20表示20倍杠杆）"
+    },
+    "MARGIN_MODE": {
+      "value": "cross",
+      "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
+    },
+    "TAKE_PROFIT": {
+      "value": 0.8,
+      "description": "止盈百分比（实际价格百分比，如0.8表示价格上涨0.8%平仓）"
+    },
+    "STOP_LOSS": {
+      "value": 0.3,
+      "description": "止损百分比（实际价格百分比，如0.3表示价格下跌0.3%平仓）"
+    },
+    "ATR_PERIOD": {
+      "value": 7,
+      "description": "ATR计算周期，用于动态调整仓位"
+    },
+    "ATR_TARGET": {
+      "value": 0.017,
+      "description": "目标ATR值，ATR接近此值时仓位最大"
+    },
+    "ATR_BASE": {
+      "value": 0.007,
+      "description": "ATR偏离值，用于以目标值为准计算偏离区间"
+    },
+    "ATR_TP_MULTIPLIER": {
+      "value": 1.1,
+      "description": "ATR止盈倍数，用于计算止盈价格（如1.1表示止盈为1.1倍ATR）"
+    },
+    "ATR_SL_MULTIPLIER": {
+      "value": 1.0,
+      "description": "ATR止损倍数，用于计算止损价格（如1.0表示止损为1.0倍ATR）"
+    },
+    "BUY_RATIO_MIN": {
+      "value": 0.01,
+      "description": "最小仓位比例，范围0-1"
+    },
+    "BUY_RATIO_MAX": {
+      "value": 0.06,
+      "description": "最大仓位比例，范围0-1"
+    }
   }
 }
