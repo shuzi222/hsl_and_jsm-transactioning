@@ -276,7 +276,7 @@
       "value": 7,
       "description": "Supertrend ATR周期"
     },
-    "SAI_MULTIPLIER": {
+    "SAT_MULTIPLIER": {
       "value": 3.0,
       "description": "Supertrend ATR倍数"
     },
