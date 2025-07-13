@@ -1,0 +1,20 @@
+{
+  "BTC-USDT-SWAP": {
+    "SAT_TIMEFRAME_1D": {"value": "1D", "description": "日线周期"},
+    "SAT_TIMEFRAME_1H": {"value": "1H", "description": "1小时周期"},
+    "SAT_PERIOD": {"value": 7, "description": "Supertrend ATR周期"},
+    "SAT_MULTIPLIER": {"value": 3.0, "description": "Supertrend ATR倍数"},
+    "BUY_RATIO": {"value": 0.1, "description": "仓位比例"},
+    "LEVERAGE": {"value": 10, "description": "杠杆倍数"},
+    "MARGIN_MODE": {"value": "isolated", "description": "保证金模式"},
+    "TAKE_PROFIT": {"value": 5.0, "description": "止盈百分比"},
+    "STOP_LOSS": {"value": 2.0, "description": "止损百分比"},
+    "ATR_PERIOD": {"value": 7, "description": "ATR周期"},
+    "ATR_TARGET": {"value": 0.01, "description": "ATR目标值"},
+    "ATR_BASE": {"value": 0.005, "description": "ATR基准值"},
+    "BUY_RATIO_MIN": {"value": 0.05, "description": "最小仓位比例"},
+    "BUY_RATIO_MAX": {"value": 0.2, "description": "最大仓位比例"},
+    "ATR_TP_MULTIPLIER": {"value": 2.0, "description": "ATR止盈倍数"},
+    "ATR_SL_MULTIPLIER": {"value": 1.0, "description": "ATR止损倍数"}
+  }
+}
