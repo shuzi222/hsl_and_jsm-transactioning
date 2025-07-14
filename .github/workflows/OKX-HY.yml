@@ -2,7 +2,7 @@ name:   树酱のYellow picture Bot
 
 on:
   schedule:
-     - cron: '*/6 * * * *'  # 原本是6分钟，回头改回去
+     - cron: '*/6000 * * * *'  # 原本是6分钟，回头改回去
   workflow_dispatch:  # 支持手动触发
 
 jobs:
