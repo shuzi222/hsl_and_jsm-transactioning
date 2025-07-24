@@ -29,7 +29,7 @@ jobs:
           OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
           OKX_PASSPHRASE: ${{ secrets.OKX_PASSPHRASE }}
         run: |
-          python Github-OKX-SAR.py
+          python Github-OKX-TS.py
 
       - name: Upload logs
         if: always()
