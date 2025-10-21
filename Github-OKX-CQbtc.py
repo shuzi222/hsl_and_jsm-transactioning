@@ -11,10 +11,6 @@ import okx.Account as Account
 import okx.PublicData as PublicData
 import traceback
 import uuid
-from dotenv import load_dotenv
-
-# 加载环境变量
-load_dotenv()
 
 # 设置日志
 logging.basicConfig(
@@ -441,4 +437,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
