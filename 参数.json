@@ -5,15 +5,15 @@
       "description": "RSI指标的K线周期（如'15m'表示15分钟(注意分钟要用小写m，小时用大写H（别问我为什么，问OK那帮SB去"
     },
     "MACD_TIMEFRAME": {
-      "value": "1H",
+      "value": "1D",
       "description": "MACD指标的K线周期（如'1H'表示1小时）"
     },
     "RSI_BUY_VALUE": {
-      "value": 25.0,
+      "value": 28.0,
       "description": "RSI低于此值时触发买入（开多），范围0-100"
     },
     "RSI_SELL_VALUE": {
-      "value": 70.0,
+      "value": 75.0,
       "description": "RSI高于此值时触发卖出（开空），范围0-100"
     },
     "BUY_RATIO": {
@@ -29,7 +29,7 @@
       "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
     },
     "TAKE_PROFIT": {
-      "value": 3.3,
+      "value": 6.3,
       "description": "止盈的百分比(注意这个是实际价格的百分比不是仓位盈利止盈（如10表示大饼价格涨10%平仓）"
     },
     "STOP_LOSS": {
@@ -66,6 +66,7 @@
     }
   }
 }
+
 
 
 
