@@ -2,18 +2,18 @@
   "BTC-USDT-SWAP": {
     "RSI_TIMEFRAME": {
       "value": "1H",
-      "description": "RSI指标的K线周期（如'15m'表示15分钟(注意分钟要用小写m，小时用大写H（别问我为什么，问OK那帮SB去"
+      "description": "RSI指标的K线周期（如'15m'表示15分钟(注意分钟要用小写m，小时用大写H）"
     },
     "RSI_BUY_VALUE": {
-      "value": 23.0,
+      "value": 25.0,
       "description": "RSI低于此值时触发买入，范围0-100"
     },
     "RSI_SELL_VALUE": {
-      "value": 64.0,
+      "value": 70.0,
       "description": "RSI高于此值时触发卖出，范围0-100"
     },
     "BUY_RATIO": {
-      "value": 0.08,
+      "value": 0.1,
       "description": "默认仓位比例（账户权益百分比），范围0-1"
     },
     "LEVERAGE": {
@@ -25,7 +25,8 @@
       "description": "保证金模式，'cross'为全仓，'isolated'为逐仓"
     },
     "TAKE_PROFIT": {
-      "value": 0.5,
+      "value": 3.3,
       "description": "止盈的百分比(注意这个是实际价格的百分比不是仓位盈利止盈（如10表示大饼价格涨10%平仓）"
     }
   }
+}
