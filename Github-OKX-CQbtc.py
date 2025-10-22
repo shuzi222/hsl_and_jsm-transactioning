@@ -185,11 +185,19 @@ def get_klines(symbol, interval, limit=100):
     logging.error(f"获取K线失败: {symbol}, 重试次数耗尽")
     return None
 
-def calculate_rsi(df, period=14):
+def calculate_rsi(df, period=14, current_price=None):
+    """RSI计算，支持实时价格替换最后一根K线收盘价"""
     try:
         if len(df) < period + 1:
             logging.warning(f"RSI 数据不足: {len(df)} 条")
             return None
+        
+        # 🔥 最小修改：如果提供实时价格，替换最后一根K线的收盘价
+        if current_price is not None:
+            df = df.copy()
+            df.iloc[-1, df.columns.get_loc('close')] = current_price
+            logging.info(f"RSI 使用实时价格更新: {current_price:.2f} (原收盘价: {df['close'].iloc[-1]:.2f} → 新价格: {current_price:.2f})")
+        
         close = df['close'].values
         delta = np.diff(close)
         gains = np.where(delta > 0, delta, 0)
@@ -214,7 +222,7 @@ def calculate_rsi(df, period=14):
         if np.isnan(rsi[-1]):
             logging.warning("RSI 计算结果无效")
             return None
-        logging.info(f"RSI 计算: 周期={period}, 最新RSI={rsi[-1]:.2f}")
+        logging.info(f"RSI 计算: 周期={period}, 最新RSI={rsi[-1]:.2f} {'[实时价格]' if current_price is not None else '[整点收盘]'}")
         return pd.Series(rsi, index=df.index)
     except Exception as e:
         logging.error(f"RSI 计算错误: {str(e)}\n{traceback.format_exc()}")
@@ -412,8 +420,17 @@ def execute_trading_logic(symbol):
             logging.warning(f"{symbol} 无MACD K线数据，跳过交易")
             return False
 
-        # 计算RSI
-        rsi = calculate_rsi(df_rsi)
+        # 🔥 最小修改：获取当前价格后传入RSI计算
+        price = get_price(symbol)
+        if price:
+            state[symbol]['current_price'] = price
+            logging.info(f"{symbol} 当前价格: ${price:.2f}")
+        else:
+            logging.warning(f"{symbol} 无法获取价格，跳过交易")
+            return False
+
+        # 计算RSI - 🔥 传入实时价格
+        rsi = calculate_rsi(df_rsi, current_price=price)
         if rsi is None:
             logging.warning(f"{symbol} RSI计算失败，跳过交易")
             return False
@@ -439,14 +456,6 @@ def execute_trading_logic(symbol):
             return False
         if usdt_balance == 0 and total_equity == 0:  # 检查账户是否完全无资金
             logging.warning(f"{symbol} 账户无可用资金: USDT={usdt_balance:.2f}, 总权益={total_equity:.2f}")
-            return False
-        # 获取当前价格
-        price = get_price(symbol)
-        if price:
-            state[symbol]['current_price'] = price
-            logging.info(f"{symbol} 当前价格: ${price:.2f}")
-        else:
-            logging.warning(f"{symbol} 无法获取价格，跳过交易")
             return False
 
         logging.info(f"{symbol} 账户状态: USDT余额={usdt_balance:.2f}, 总权益={total_equity:.2f}, 多仓={long_qty:.2f}, 空仓={short_qty:.2f}")
@@ -574,3 +583,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
