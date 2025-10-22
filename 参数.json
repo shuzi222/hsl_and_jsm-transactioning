@@ -2,11 +2,11 @@
   "BTC-USDT-SWAP": {
     "RSI_TIMEFRAME": {
       "value": "1H",
-      "description": "RSI指标的K线周期（如'15m'表示15分钟(注意分钟要用小写m，小时用大写H（别问我为什么，问OK那帮SB去"
+      "description": "RSI指标的K线周期（如'15m'表示15分钟，小写m；'1H'表示1小时，大写H）"
     },
     "MACD_TIMEFRAME": {
       "value": "1D",
-      "description": "MACD指标的K线周期（如'1H'表示1小时）"
+      "description": "MACD指标的K线周期（如'1H'表示1小时，'1D'表示1天）"
     },
     "RSI_BUY_VALUE": {
       "value": 28.0,
@@ -18,11 +18,11 @@
     },
     "BUY_RATIO": {
       "value": 0.1,
-      "description": "默认仓位比例（账户权益百分比），范围0-1"
+      "description": "固定仓位比例（账户权益百分比），范围0-1"
     },
     "LEVERAGE": {
       "value": 5.0,
-      "description": "交易杠杆倍数（如20表示20倍杠杆）"
+      "description": "交易杠杆倍数（如5表示5倍杠杆）"
     },
     "MARGIN_MODE": {
       "value": "cross",
@@ -30,43 +30,19 @@
     },
     "TAKE_PROFIT": {
       "value": 6.3,
-      "description": "止盈的百分比(注意这个是实际价格的百分比不是仓位盈利止盈（如10表示大饼价格涨10%平仓）"
+      "description": "RSI信号止盈百分比（如6.3表示价格涨6.3%平仓）"
     },
     "STOP_LOSS": {
       "value": 100.0,
-      "description": "止损百分比(注意这个是实际价格的百分比不是仓位盈利止盈（如10表示大饼价格涨10%平仓）"
+      "description": "RSI信号止损百分比（如100表示价格跌100%平仓）"
     },
-    "ATR_PERIOD": {
-      "value": 7,
-      "description": "ATR计算周期，用于动态调整仓位"
+    "MACD_TAKE_PROFIT": {
+      "value": 3.0,
+      "description": "MACD信号止盈百分比（如4.5表示价格涨4.5%平仓）"
     },
-    "ATR_TARGET": {
-      "value": 290.0,
-      "description": "目标ATR值，ATR接近此值时仓位最大"
-    },
-    "ATR_BASE": {
-      "value": 500.0,
-      "description": "ATR偏离值，用于以目标值为准计算偏离区间"
-    },
-    "ATR_TP_MULTIPLIER": {
-      "value": 2.1,
-      "description": "ATR止盈倍数，用于计算止盈价格（如2.5表示止盈为2.5倍ATR）"
-    },
-    "ATR_SL_MULTIPLIER": {
-      "value": 0.4,
-      "description": "ATR止损倍数，用于计算止损价格（如1.5表示止损为1.5倍ATR）"
-    },
-    "BUY_RATIO_MIN": {
-      "value": 0.05,
-      "description": "最小仓位比例，范围0-1"
-    },
-    "BUY_RATIO_MAX": {
-      "value": 0.2,
-      "description": "最大仓位比例，范围0-1"
+    "MACD_STOP_LOSS": {
+      "value": 2.0,
+      "description": "MACD信号止损百分比（如2.8表示价格跌2.8%平仓）"
     }
   }
 }
-
-
-
-
